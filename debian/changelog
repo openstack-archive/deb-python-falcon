@@ -1,0 +1,5 @@
+python-falcon (0.1.7-1) unstable; urgency=low
+
+  * Initial release. (Closes: #723633)
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 18 Sep 2013 15:34:49 +0800

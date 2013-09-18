@@ -1,0 +1,83 @@
+Source: python-falcon
+Section: python
+Priority: optional
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Julien Danjou <acid@debian.org>,
+           Thomas Goirand <zigo@debian.org>,
+           Mehdi Abaakouk <sileht@sileht.net>
+Build-Depends: debhelper (>= 9),
+               openstack-pkg-tools,
+               python-all (>= 2.6.6-3~),
+               python-nose,
+               python-requests,
+               python-setuptools,
+               python-six,
+               python-testtools,
+               python3-all,
+               python3-nose,
+               python3-requests,
+               python3-setuptools,
+               python3-six,
+               python3-testtools
+Standards-Version: 3.9.4
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-falcon.git
+Vcs-Git: git://anonscm.debian.org/openstack/python-falcon.git
+Homepage: http://falconframework.org
+
+Package: python-falcon
+Architecture: all
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: ${misc:Depends}, ${python:Depends}
+Recommends: ${python:Recommends}
+Description: supersonic micro-framework for building cloud APIs - Python 2.x
+ Falcon is a high-performance Python framework for building cloud APIs. It
+ encourages the REST architectural style, and tries to do as little as possible
+ while remaining highly effective.
+ .
+ Unlike other Python web frameworks, Falcon won't bottleneck your API's
+ performance under highly concurrent workloads. Many frameworks max out at
+ serving simple "hello world" requests at a few thousand req/sec, while Falcon
+ can easily serve many more on the same hardware.
+ .
+ Falcon isn't very opinionated. In other words, the framework leaves a lot of
+ decisions and implementation details to you.
+ .
+ Features:
+  * Intuitive routing via URI templates and resource classes
+  * Easy access to headers and bodies through request and response classes
+  * Idiomatic HTTP error responses via a handy exception base class
+  * DRY request processing using global, resource, and method hooks
+  * Snappy unit testing through WSGI helpers and mocks
+  * 20% speed boost when Cython is available
+  * Python 2.6, Python 2.7, PyPy and Python 3.3 support
+ .
+ This package provides the Python 2.x module.
+
+Package: python3-falcon
+Architecture: all
+Pre-Depends: dpkg (>= 1.15.6~)
+Depends: ${misc:Depends}, ${python3:Depends}
+Recommends: ${python3:Recommends}
+Description: supersonic micro-framework for building cloud APIs - Python 3.x
+ Falcon is a high-performance Python framework for building cloud APIs. It
+ encourages the REST architectural style, and tries to do as little as possible
+ while remaining highly effective.
+ .
+ Unlike other Python web frameworks, Falcon won't bottleneck your API's
+ performance under highly concurrent workloads. Many frameworks max out at
+ serving simple "hello world" requests at a few thousand req/sec, while Falcon
+ can easily serve many more on the same hardware.
+ .
+ Falcon isn't very opinionated. In other words, the framework leaves a lot of
+ decisions and implementation details to you.
+ .
+ Features:
+  * Intuitive routing via URI templates and resource classes
+  * Easy access to headers and bodies through request and response classes
+  * Idiomatic HTTP error responses via a handy exception base class
+  * DRY request processing using global, resource, and method hooks
+  * Snappy unit testing through WSGI helpers and mocks
+  * 20% speed boost when Cython is available
+  * Python 2.6, Python 2.7, PyPy and Python 3.3 support
+ .
+ This package provides the Python 3.x module.
