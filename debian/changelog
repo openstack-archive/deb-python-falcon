@@ -1,6 +1,7 @@
 python-falcon (0.1.7-2) unstable; urgency=low
 
   * Fixes non-ASCII chars in README.rst.
+  * Added cython to build-depends.
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 26 Sep 2013 17:14:06 +0800
 
