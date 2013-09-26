@@ -26,7 +26,7 @@ Vcs-Git: git://anonscm.debian.org/openstack/python-falcon.git
 Homepage: http://falconframework.org
 
 Package: python-falcon
-Architecture: all
+Architecture: any
 Pre-Depends: dpkg (>= 1.15.6~)
 Depends: ${misc:Depends}, ${python:Depends}
 Recommends: ${python:Recommends}
@@ -55,7 +55,7 @@ Description: supersonic micro-framework for building cloud APIs - Python 2.x
  This package provides the Python 2.x module.
 
 Package: python3-falcon
-Architecture: all
+Architecture: any
 Pre-Depends: dpkg (>= 1.15.6~)
 Depends: ${misc:Depends}, ${python3:Depends}
 Recommends: ${python3:Recommends}
