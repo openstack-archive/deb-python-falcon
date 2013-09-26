@@ -28,7 +28,7 @@ Homepage: http://falconframework.org
 Package: python-falcon
 Architecture: any
 Pre-Depends: dpkg (>= 1.15.6~)
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
 Recommends: ${python:Recommends}
 Description: supersonic micro-framework for building cloud APIs - Python 2.x
  Falcon is a high-performance Python framework for building cloud APIs. It
@@ -57,7 +57,7 @@ Description: supersonic micro-framework for building cloud APIs - Python 2.x
 Package: python3-falcon
 Architecture: any
 Pre-Depends: dpkg (>= 1.15.6~)
-Depends: ${misc:Depends}, ${python3:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}
 Recommends: ${python3:Recommends}
 Description: supersonic micro-framework for building cloud APIs - Python 3.x
  Falcon is a high-performance Python framework for building cloud APIs. It
