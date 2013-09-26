@@ -5,10 +5,12 @@ Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Julien Danjou <acid@debian.org>,
            Thomas Goirand <zigo@debian.org>,
            Mehdi Abaakouk <sileht@sileht.net>
-Build-Depends: debhelper (>= 9),
-               cython,
+Build-Depends: cython,
+               debhelper (>= 9),
                openstack-pkg-tools,
                python-all (>= 2.6.6-3~),
+               python-dev (>= 2.7.3) | python2.6-dev,
+               python-dev (>= 2.7.3) | python2.7-dev,
                python-nose,
                python-requests,
                python-setuptools,
@@ -28,7 +30,7 @@ Homepage: http://falconframework.org
 Package: python-falcon
 Architecture: any
 Pre-Depends: dpkg (>= 1.15.6~)
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${python:Depends}, ${shlibs:Depends}
 Recommends: ${python:Recommends}
 Description: supersonic micro-framework for building cloud APIs - Python 2.x
  Falcon is a high-performance Python framework for building cloud APIs. It
@@ -57,7 +59,7 @@ Description: supersonic micro-framework for building cloud APIs - Python 2.x
 Package: python3-falcon
 Architecture: any
 Pre-Depends: dpkg (>= 1.15.6~)
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}
+Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
 Recommends: ${python3:Recommends}
 Description: supersonic micro-framework for building cloud APIs - Python 3.x
  Falcon is a high-performance Python framework for building cloud APIs. It
