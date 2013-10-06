@@ -1,3 +1,10 @@
+python-falcon (0.1.7-3) unstable; urgency=low
+
+  * Reverts the order in the build-depends of python-dev to fix FTBFS. Any
+    backport will have to revert the other way (Closes: #725406).
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 06 Oct 2013 09:01:47 +0000
+
 python-falcon (0.1.7-2) unstable; urgency=low
 
   * Fixes non-ASCII chars in README.rst.
