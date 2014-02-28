@@ -1,6 +1,7 @@
 python-falcon (0.1.7-3) unstable; urgency=medium
 
-  * Applied patch from Matthias Klose to fix the shebangs. (Closes: #739621)
+  * Applied patch from Matthias Klose to fix the shebangs, though do not do it
+    if building under Precise, which doesn't have the option (Closes: #739621).
 
  -- Thomas Goirand <zigo@debian.org>  Fri, 28 Feb 2014 18:14:37 +0800
 
