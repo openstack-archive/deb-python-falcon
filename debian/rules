@@ -24,3 +24,9 @@ override_dh_auto_install:
 #override_dh_auto_test:
 #	nosetests
 #endif
+
+override_dh_python2:
+	dh_python2 --shebang=/usr/bin/python
+
+override_dh_python3:
+	dh_python3 --shebang=/usr/bin/python3
