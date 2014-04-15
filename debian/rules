@@ -21,10 +21,10 @@ override_dh_auto_install:
 	done
 	mv $(CURDIR)/debian/python3-falcon/usr/bin/falcon-bench $(CURDIR)/debian/python3-falcon/usr/bin/python3-falcon-bench
 
-#ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
-#override_dh_auto_test:
-#	nosetests
-#endif
+override_dh_auto_test:
+ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+	nosetests
+endif
 
 override_dh_python2:
 	if [ $(DEB_RELEASE_NAME) = "precise" ] ; then \
