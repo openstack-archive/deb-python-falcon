@@ -1,5 +1,6 @@
-python-falcon (0.1.7-5) UNRELEASED; urgency=low
+python-falcon (0.1.8-1) unstable; urgency=low
 
+  * New upstream releaes.
   * Fixed wrong build-depends for python{3,}-all-dev.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 15 Apr 2014 21:34:59 +0800
