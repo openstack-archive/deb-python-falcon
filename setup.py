@@ -1,4 +1,5 @@
 import imp
+import io
 import sys
 from os import path
 from setuptools import setup, find_packages, Extension
@@ -25,7 +26,8 @@ if not PYPY:
         CYTHON = True
     except ImportError:
         print('\nWARNING: Cython not installed. '
-              'Falcon modules WILL NOT be compiled with Cython.\n')
+              'Falcon modules will still work fine, but will run '
+              'a bit slower.\n')
         CYTHON = False
 
 if CYTHON:
@@ -52,10 +54,10 @@ else:
 setup(
     name='falcon',
     version=VERSION,
-    description='A supersonic micro-framework for building cloud APIs.',
-    long_description=open('README.rst', 'r').read(),
+    description='An unladen web framework for building APIs and app backends.',
+    long_description=io.open('README.rst', 'r', encoding='utf-8').read(),
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Natural Language :: English',
         'Intended Audience :: Developers',

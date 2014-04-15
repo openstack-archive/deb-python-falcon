@@ -35,7 +35,9 @@ import six
 
 from falcon.exceptions import HTTPBadRequest
 from falcon import util
+from falcon.util import uri
 from falcon import request_helpers as helpers
+
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
@@ -69,8 +71,10 @@ class Request(object):
     """
 
     __slots__ = (
+        '_cached_headers',
+        '_cached_uri',
+        '_cached_relative_uri',
         'env',
-        '_headers',
         'method',
         '_params',
         'path',
@@ -107,18 +111,33 @@ class Request(object):
 
         # QUERY_STRING isn't required to be in env, so let's check
         # PERF: if...in is faster than using env.get(...)
-        if 'QUERY_STRING' in env:
-            self.query_string = env['QUERY_STRING']
+        if 'QUERY_STRING' in env and env['QUERY_STRING']:
+
+            # TODO(kgriffs): Should this escape individual values instead
+            # of the entire string? The way it is now, this:
+            #
+            #   x=ab%2Bcd%3D42%2C9
+            #
+            # becomes this:
+            #
+            #   x=ab+cd=42,9
+            #
+            self.query_string = uri.decode(env['QUERY_STRING'])
+
         else:
-            self.query_string = ''
+            self.query_string = six.text_type()
 
         # PERF: Don't parse it if we don't have to!
         if self.query_string:
-            self._params = helpers.parse_query_string(self.query_string)
+            self._params = uri.parse_query_string(self.query_string)
         else:
             self._params = {}
 
-        self._headers = helpers.parse_headers(env)
+        helpers.normalize_headers(env)
+        self._cached_headers = {}
+
+        self._cached_uri = None
+        self._cached_relative_uri = None
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
@@ -221,7 +240,7 @@ class Request(object):
     @property
     def accept(self):
         """Value of the Accept header, or */* if not found per RFC."""
-        accept = self._get_header_by_wsgi_name('ACCEPT')
+        accept = self._get_header_by_wsgi_name('HTTP_ACCEPT')
 
         # NOTE(kgriffs): Per RFC, missing accept header is
         # equivalent to '*/*'
@@ -235,7 +254,7 @@ class Request(object):
     @property
     def auth(self):
         """Value of the Authorization header, or None if not found."""
-        return self._get_header_by_wsgi_name('AUTHORIZATION')
+        return self._get_header_by_wsgi_name('HTTP_AUTHORIZATION')
 
     @property
     def content_length(self):
@@ -248,7 +267,7 @@ class Request(object):
             HTTPBadRequest: The header had a value, but it wasn't
                 formatted correctly or was a negative number.
         """
-        value = self._get_header_by_wsgi_name('CONTENT_LENGTH')
+        value = self._get_header_by_wsgi_name('HTTP_CONTENT_LENGTH')
         if value:
             try:
                 value_as_int = int(value)
@@ -264,12 +283,12 @@ class Request(object):
             else:
                 return value_as_int
 
-        # implicit return None
+        return None
 
     @property
     def content_type(self):
         """Value of the Content-Type header, or None if not found."""
-        return self._get_header_by_wsgi_name('CONTENT_TYPE')
+        return self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
 
     @property
     def date(self):
@@ -286,7 +305,7 @@ class Request(object):
 
         """
 
-        http_date = self._get_header_by_wsgi_name('DATE')
+        http_date = self._get_header_by_wsgi_name('HTTP_DATE')
         try:
             return util.http_date_to_dt(http_date)
         except ValueError:
@@ -297,32 +316,32 @@ class Request(object):
     @property
     def expect(self):
         """Value of the Expect header, or None if missing."""
-        return self._get_header_by_wsgi_name('EXPECT')
+        return self._get_header_by_wsgi_name('HTTP_EXPECT')
 
     @property
     def if_match(self):
         """Value of the If-Match header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_MATCH')
+        return self._get_header_by_wsgi_name('HTTP_IF_MATCH')
 
     @property
     def if_none_match(self):
         """Value of the If-None-Match header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_NONE_MATCH')
+        return self._get_header_by_wsgi_name('HTTP_IF_NONE_MATCH')
 
     @property
     def if_modified_since(self):
         """Value of the If-Modified-Since header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_MODIFIED_SINCE')
+        return self._get_header_by_wsgi_name('HTTP_IF_MODIFIED_SINCE')
 
     @property
     def if_unmodified_since(self):
         """Value of the If-Unmodified-Since header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_UNMODIFIED_SINCE')
+        return self._get_header_by_wsgi_name('HTTP_IF_UNMODIFIED_SINCE')
 
     @property
     def if_range(self):
         """Value of the If-Range header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_RANGE')
+        return self._get_header_by_wsgi_name('HTTP_IF_RANGE')
 
     @property
     def protocol(self):
@@ -349,7 +368,7 @@ class Request(object):
                 formatted correctly.
         """
 
-        value = self._get_header_by_wsgi_name('RANGE')
+        value = self._get_header_by_wsgi_name('HTTP_RANGE')
 
         if value:
             if ',' in value:
@@ -381,16 +400,21 @@ class Request(object):
     def uri(self):
         """The fully-qualified URI for the request."""
 
-        # PERF: For small numbers of items, '+' is faster than ''.join(...)
-        value = (self.protocol + '://' +
-                 self.get_header('host') +
-                 self.app +
-                 self.path)
+        if self._cached_uri is None:
+            # PERF: For small numbers of items, '+' is faster
+            # than ''.join(...). Concatenation is also generally
+            # faster than formatting.
+            value = (self.protocol + '://' +
+                     self.get_header('host') +
+                     self.app +
+                     self.path)
 
-        if self.query_string:
-            value = value + '?' + self.query_string
+            if self.query_string:
+                value = value + '?' + self.query_string
 
-        return value
+            self._cached_uri = value
+
+        return self._cached_uri
 
     url = uri
     """Alias for uri"""
@@ -398,19 +422,24 @@ class Request(object):
     @property
     def relative_uri(self):
         """The path + query string portion of the full URI."""
-        if self.query_string:
-            return self.app + self.path + '?' + self.query_string
 
-        return self.app + self.path
+        if self._cached_relative_uri is None:
+            if self.query_string:
+                self._cached_relative_uri = (self.app + self.path + '?' +
+                                             self.query_string)
+            else:
+                self._cached_relative_uri = self.app + self.path
+
+        return self._cached_relative_uri
 
     @property
     def user_agent(self):
         """Value of the User-Agent string, or None if missing."""
-        return self._get_header_by_wsgi_name('USER_AGENT')
+        return self._get_header_by_wsgi_name('HTTP_USER_AGENT')
 
     @property
     def headers(self):
-        """Get HTTP headers
+        """Get raw HTTP headers
 
         Build a temporary dictionary of dash-separated HTTP headers,
         which can be used as a whole, like, to perform an HTTP request.
@@ -418,11 +447,24 @@ class Request(object):
         If you want to lookup a header, please use `get_header` instead.
 
         Returns:
-            A dictionary of HTTP headers.
+            A new dictionary of HTTP headers.
 
         """
-        return dict((k.lower().replace('_', '-'), v)
-                    for k, v in self._headers.items())
+
+        # NOTE(kgriffs: First time here will cache the dict so all we
+        # have to do is clone it in the future.
+        if not self._cached_headers:
+            headers = self._cached_headers
+
+            env = self.env
+            for name, value in env.items():
+                if name.startswith('HTTP_'):
+                    # NOTE(kgriffs): Don't take the time to fix the case
+                    # since headers are supposed to be case-insensitive
+                    # anyway.
+                    headers[name[5:].replace('_', '-')] = value
+
+        return self._cached_headers.copy()
 
     def get_header(self, name, required=False):
         """Return a header value as a string
@@ -448,7 +490,7 @@ class Request(object):
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self._headers[name.upper().replace('-', '_')]
+            return self.env['HTTP_' + name.upper().replace('-', '_')]
         except KeyError:
             if not required:
                 return None
@@ -476,13 +518,15 @@ class Request(object):
 
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
+        if name in params:
             if store is not None:
-                store[name] = self._params[name]
+                store[name] = params[name]
 
-            return self._params[name]
+            return params[name]
 
         if not required:
             return None
@@ -520,10 +564,12 @@ class Request(object):
 
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
-            val = self._params[name]
+        if name in params:
+            val = params[name]
             try:
                 val = int(val)
             except ValueError:
@@ -579,10 +625,12 @@ class Request(object):
 
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
-            val = self._params[name]
+        if name in params:
+            val = params[name]
             if val in TRUE_STRINGS:
                 val = True
             elif val in FALSE_STRINGS:
@@ -646,10 +694,12 @@ class Request(object):
                 required.
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
-            items = self._params[name].split(',')
+        if name in params:
+            items = params[name].split(',')
 
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
@@ -693,6 +743,6 @@ class Request(object):
 
         """
         try:
-            return self._headers[name] or None
+            return self.env[name] or None
         except KeyError:
             return None

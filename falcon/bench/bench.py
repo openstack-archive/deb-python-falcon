@@ -19,6 +19,11 @@ except ImportError:
 else:
     heapy = guppy.hpy()
 
+try:
+    import pprofile
+except ImportError:
+    pprofile = None
+
 from falcon.bench import create  # NOQA
 import falcon.testing as helpers
 
@@ -45,9 +50,9 @@ def bench(name, iterations, env, stat_memory):
     return (name, sec_per_req, heap_diff)
 
 
-def profile(name, env, output=None):
-    if output:
-        filename = name + '-' + output
+def profile(name, env, filename=None, verbose=False):
+    if filename:
+        filename = name + '-' + filename
         print('Profiling %s ==> %s' % (name, filename))
 
     else:
@@ -63,8 +68,17 @@ def profile(name, env, output=None):
 
     gc.collect()
     code = 'for x in xrange(10000): func()'
-    cProfile.runctx(code, locals(), globals(),
-                    sort='tottime', filename=filename)
+
+    if verbose:
+        if pprofile is None:
+            print('pprofile not found. Please install pprofile and try again.')
+            return
+
+        pprofile.runctx(code, locals(), globals(), filename=filename)
+
+    else:
+        cProfile.runctx(code, locals(), globals(),
+                        sort='tottime', filename=filename)
 
 
 BODY = helpers.rand_string(10240, 10240)  # NOQA
@@ -105,7 +119,7 @@ def avg(array):
 def hello_env():
     request_headers = {'Content-Type': 'application/json'}
     return helpers.create_environ('/hello/584/test',
-                                  query_string='limit=10',
+                                  query_string='limit=10&thing=ab',
                                   headers=request_headers)
 
 
@@ -114,7 +128,8 @@ def queues_env():
     path = ('/v1/852809/queues/0fd4c8c6-bd72-11e2-8e47-db5ebd4c8125'
             '/claims/db5ebd4c8125')
 
-    return helpers.create_environ(path, query_string='limit=10',
+    qs = 'limit=10&thing=a%20b&x=%23%24'
+    return helpers.create_environ(path, query_string=qs,
                                   headers=request_headers)
 
 
@@ -122,12 +137,13 @@ def get_env(framework):
     return queues_env() if framework == 'falcon-ext' else hello_env()
 
 
-def run(frameworks, repetitions, iterations, stat_memory):
+def run(frameworks, trials, iterations, stat_memory):
     # Skip any frameworks that are not installed
     for name in frameworks:
         try:
             create_bench(name, hello_env())
-        except ImportError:
+        except ImportError as ex:
+            print(ex)
             print('Skipping missing library: ' + name)
             del frameworks[frameworks.index(name)]
 
@@ -138,11 +154,11 @@ def run(frameworks, repetitions, iterations, stat_memory):
         return
 
     datasets = []
-    for r in range(repetitions):
+    for r in range(trials):
         random.shuffle(frameworks)
 
-        sys.stdout.write('Benchmarking, Round %d of %d' %
-                         (r + 1, repetitions))
+        sys.stdout.write('Benchmarking, Trial %d of %d' %
+                         (r + 1, trials))
         sys.stdout.flush()
 
         dataset = [bench(framework, iterations,
@@ -167,10 +183,11 @@ def main():
 
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
     parser.add_argument('-b', '--benchmark', type=str, action='append',
-                        choices=frameworks, dest='frameworks')
+                        choices=frameworks, dest='frameworks', nargs='+')
     parser.add_argument('-i', '--iterations', type=int, default=50000)
-    parser.add_argument('-r', '--repetitions', type=int, default=3)
-    parser.add_argument('-p', '--profile', action='store_true')
+    parser.add_argument('-t', '--trials', type=int, default=3)
+    parser.add_argument('-p', '--profile', type=str,
+                        choices=['standard', 'verbose'])
     parser.add_argument('-o', '--profile-output', type=str, default=None)
     parser.add_argument('-m', '--stat-memory', action='store_true')
     args = parser.parse_args()
@@ -181,16 +198,28 @@ def main():
     if args.frameworks:
         frameworks = args.frameworks
 
+    # Normalize frameworks type
+    normalized_frameworks = []
+    for one_or_many in frameworks:
+        if isinstance(one_or_many, list):
+            normalized_frameworks.extend(one_or_many)
+        else:
+            normalized_frameworks.append(one_or_many)
+
+    frameworks = normalized_frameworks
+
     # Profile?
     if args.profile:
         for name in frameworks:
-            profile(name, get_env(name), args.profile_output)
+            profile(name, get_env(name),
+                    filename=args.profile_output,
+                    verbose=(args.profile == 'verbose'))
 
         print()
         return
 
     # Otherwise, benchmark
-    datasets = run(frameworks, args.repetitions, args.iterations,
+    datasets = run(frameworks, args.trials, args.iterations,
                    args.stat_memory)
 
     dataset = consolidate_datasets(datasets)

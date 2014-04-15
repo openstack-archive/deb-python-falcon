@@ -52,7 +52,7 @@ def rand_string(min, max):
 
     int_gen = random.randint
     string_length = int_gen(min, max)
-    return ''.join([chr(int_gen(ord('\t'), ord('~')))
+    return ''.join([chr(int_gen(ord(' '), ord('~')))
                     for i in range(string_length)])
 
 
@@ -83,6 +83,9 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
 
     body = io.BytesIO(body.encode('utf-8')
                       if isinstance(body, six.text_type) else body)
+
+    if six.PY2 and isinstance(path, unicode):
+        path = path.encode('utf-8')
 
     env = {
         'SERVER_PROTOCOL': protocol,

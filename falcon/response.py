@@ -19,7 +19,7 @@ limitations under the License.
 import six
 
 from falcon.response_helpers import header_property, format_range
-from falcon.util import dt_to_http, percent_escape
+from falcon.util import dt_to_http, uri
 
 
 class Response(object):
@@ -108,34 +108,43 @@ class Response(object):
         Warning: Overwrites the existing value, if any.
 
         Args:
-            name: Header name to set. Must be of type str or StringType, and
-                only character values 0x00 through 0xFF may be used on
-                platforms that use wide characters.
+            name: Header name to set (case-insensitive). Must be of type str
+                or StringType, and only character values 0x00 through 0xFF
+                may be used on platforms that use wide characters.
             value: Value for the header. Must be of type str or StringType, and
                 only character values 0x00 through 0xFF may be used on
                 platforms that use wide characters.
 
         """
 
-        self._headers[name] = value
+        # NOTE(kgriffs): normalize name by lowercasing it
+        self._headers[name.lower()] = value
 
     def set_headers(self, headers):
-        """Set several headers at once. May be faster than set_header().
+        """Set several headers at once.
 
         Warning: Overwrites existing values, if any.
 
         Args:
-            headers: A dict containing header names and values to set. Both
-                names and values must be of type str or StringType, and
-                only character values 0x00 through 0xFF may be used on
-                platforms that use wide characters.
+            headers: A dict containing header names and values to set, or
+                list of (name, value) tuples. A list can be read slightly
+                faster than a dict. Both names and values must be of type
+                str or StringType, and only character values 0x00 through
+                0xFF may be used on platforms that use wide characters.
 
         Raises:
             ValueError: headers was not a dictionary or list of tuples.
 
         """
 
-        self._headers.update(headers)
+        if isinstance(headers, dict):
+            headers = headers.items()
+
+        # NOTE(kgriffs): We can't use dict.update because we have to
+        # normalize the header names.
+        _headers = self._headers
+        for name, value in headers:
+            _headers[name.lower()] = value
 
     cache_control = header_property(
         'Cache-Control',
@@ -150,7 +159,7 @@ class Response(object):
     content_location = header_property(
         'Content-Location',
         'Sets the Content-Location header.',
-        percent_escape)
+        uri.encode)
 
     content_range = header_property(
         'Content-Range',
@@ -188,7 +197,7 @@ class Response(object):
     location = header_property(
         'Location',
         'Sets the Location header.',
-        percent_escape)
+        uri.encode)
 
     retry_after = header_property(
         'Retry-After',
@@ -220,21 +229,25 @@ class Response(object):
     def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers.
 
-        Note: URLs are percent-escaped automatically if they contain Unicode
-        characters.
-
         Args:
             media_type: Default media type to use for the Content-Type
-                header if the header was not set explicitly. (default None)
+                header if the header was not set explicitly (default None).
 
         """
 
         headers = self._headers
+
+        # PERF(kgriffs): Using "in" like this is faster than using
+        # dict.setdefault (tested on py27).
         set_content_type = (media_type is not None and
-                            'Content-Type' not in headers and
                             'content-type' not in headers)
 
         if set_content_type:
-            headers['Content-Type'] = media_type
+            headers['content-type'] = media_type
 
-        return list(headers.items())
+        if six.PY2:  # pragma: no cover
+            # PERF(kgriffs): Don't create an extra list object if
+            # it isn't needed.
+            return headers.items()
+
+        return list(headers.items())  # pragma: no cover

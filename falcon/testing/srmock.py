@@ -16,6 +16,8 @@ limitations under the License.
 
 """
 
+from falcon import util
+
 
 class StartResponseMock:
     """Mock object that represents a WSGI start_response callable
@@ -41,8 +43,13 @@ class StartResponseMock:
 
         self._called += 1
         self.status = status
-        self.headers = headers
-        self.headers_dict = dict(headers)
+
+        # NOTE(kgriffs): Normalize headers to be lowercase regardless
+        # of what Falcon returns, so asserts in tests don't have to
+        # worry about the case-insensitive nature of header names.
+        self.headers = [(name.lower(), value) for name, value in headers]
+
+        self.headers_dict = util.CaseInsensitiveDict(headers)
         self.exc_info = exc_info
 
     @property

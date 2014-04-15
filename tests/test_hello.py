@@ -78,7 +78,7 @@ class TestHelloWorld(testing.TestBase):
 
     def test_env_headers_list_of_tuples(self):
         env = testing.create_environ(headers=[('User-Agent', 'Falcon-Test')])
-        self.assertEquals(env['HTTP_USER_AGENT'], 'Falcon-Test')
+        self.assertEqual(env['HTTP_USER_AGENT'], 'Falcon-Test')
 
     def test_empty_route(self):
         self.simulate_request('')
@@ -90,48 +90,48 @@ class TestHelloWorld(testing.TestBase):
 
         # Ensure the request was NOT routed to resource
         self.assertFalse(self.resource.called)
-        self.assertEquals(self.srmock.status, falcon.HTTP_404)
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
 
     def test_body(self):
         body = self.simulate_request(self.test_route)
         resp = self.resource.resp
 
-        content_length = int(self.srmock.headers_dict['Content-Length'])
-        self.assertEquals(content_length, len(self.resource.sample_utf8))
+        content_length = int(self.srmock.headers_dict['content-length'])
+        self.assertEqual(content_length, len(self.resource.sample_utf8))
 
-        self.assertEquals(self.srmock.status, self.resource.sample_status)
-        self.assertEquals(resp.status, self.resource.sample_status)
-        self.assertEquals(resp.body_encoded, self.resource.sample_utf8)
-        self.assertEquals(body, [self.resource.sample_utf8])
+        self.assertEqual(self.srmock.status, self.resource.sample_status)
+        self.assertEqual(resp.status, self.resource.sample_status)
+        self.assertEqual(resp.body_encoded, self.resource.sample_utf8)
+        self.assertEqual(body, [self.resource.sample_utf8])
 
     def test_body_bytes(self):
         body = self.simulate_request('/bytes')
         resp = self.bytes_resource.resp
 
-        content_length = int(self.srmock.headers_dict['Content-Length'])
-        self.assertEquals(content_length, len(self.resource.sample_utf8))
+        content_length = int(self.srmock.headers_dict['content-length'])
+        self.assertEqual(content_length, len(self.resource.sample_utf8))
 
-        self.assertEquals(self.srmock.status, self.resource.sample_status)
-        self.assertEquals(resp.status, self.resource.sample_status)
-        self.assertEquals(resp.body_encoded, self.resource.sample_utf8)
-        self.assertEquals(body, [self.resource.sample_utf8])
+        self.assertEqual(self.srmock.status, self.resource.sample_status)
+        self.assertEqual(resp.status, self.resource.sample_status)
+        self.assertEqual(resp.body_encoded, self.resource.sample_utf8)
+        self.assertEqual(body, [self.resource.sample_utf8])
 
     def test_data(self):
         body = self.simulate_request('/data')
         resp = self.data_resource.resp
 
-        content_length = int(self.srmock.headers_dict['Content-Length'])
-        self.assertEquals(content_length, len(self.resource.sample_utf8))
+        content_length = int(self.srmock.headers_dict['content-length'])
+        self.assertEqual(content_length, len(self.resource.sample_utf8))
 
-        self.assertEquals(self.srmock.status, self.resource.sample_status)
-        self.assertEquals(resp.status, self.resource.sample_status)
-        self.assertEquals(resp.data, self.resource.sample_utf8)
-        self.assertEquals(body, [self.resource.sample_utf8])
+        self.assertEqual(self.srmock.status, self.resource.sample_status)
+        self.assertEqual(resp.status, self.resource.sample_status)
+        self.assertEqual(resp.data, self.resource.sample_utf8)
+        self.assertEqual(body, [self.resource.sample_utf8])
 
     def test_no_body_on_head(self):
         body = self.simulate_request(self.test_route, method='HEAD')
-        self.assertEquals(body, [])
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(body, [])
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
     def test_stream_chunked(self):
         src = self.simulate_request('/chunked-stream')
@@ -153,7 +153,7 @@ class TestHelloWorld(testing.TestBase):
             dest.write(chunk)
 
         expected_len = self.stream_resource.resp.stream_len
-        content_length = ('Content-Length', str(expected_len))
+        content_length = ('content-length', str(expected_len))
         self.assertThat(self.srmock.headers, Contains(content_length))
         self.assertEqual(dest.tell(), expected_len)
 

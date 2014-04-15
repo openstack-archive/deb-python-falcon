@@ -1,7 +1,5 @@
 from functools import wraps
-import io
 
-import six
 from testtools.matchers import Contains
 
 import falcon
@@ -41,7 +39,7 @@ class ThingsResource(object):
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
-    def on_post(self, req, resp):
+    def on_put(self, req, resp, id, sid):
         self.called = True
 
         self.req, self.resp = req, resp
@@ -128,22 +126,17 @@ class TestHttpMethodRouting(testing.TestBase):
 
     def test_get(self):
         self.simulate_request('/things/42/stuff/57')
-        self.assertEquals(self.srmock.status, falcon.HTTP_204)
+        self.assertEqual(self.srmock.status, falcon.HTTP_204)
         self.assertTrue(self.resource_things.called)
 
-    def test_get_not_allowed(self):
-        self.simulate_request('/things')
-        self.assertEquals(self.srmock.status, falcon.HTTP_405)
-        self.assertFalse(self.resource_things.called)
-
-    def test_post(self):
-        self.simulate_request('/things', method='POST')
-        self.assertEquals(self.srmock.status, falcon.HTTP_201)
+    def test_put(self):
+        self.simulate_request('/things/42/stuff/1337', method='PUT')
+        self.assertEqual(self.srmock.status, falcon.HTTP_201)
         self.assertTrue(self.resource_things.called)
 
     def test_post_not_allowed(self):
-        self.simulate_request('/things/42/stuff/57', method='POST')
-        self.assertEquals(self.srmock.status, falcon.HTTP_405)
+        self.simulate_request('/things/42/stuff/1337', method='POST')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertFalse(self.resource_things.called)
 
     def test_misc(self):
@@ -151,26 +144,26 @@ class TestHttpMethodRouting(testing.TestBase):
             self.resource_misc.called = False
             self.simulate_request('/misc', method=method)
             self.assertTrue(self.resource_misc.called)
-            self.assertEquals(self.resource_misc.req.method, method)
+            self.assertEqual(self.resource_misc.req.method, method)
 
     def test_methods_not_allowed_simple(self):
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
             self.simulate_request('/stonewall', method=method)
-            self.assertEquals(self.srmock.status, falcon.HTTP_405)
+            self.assertEqual(self.srmock.status, falcon.HTTP_405)
 
     def test_methods_not_allowed_complex(self):
         for method in HTTP_METHODS:
-            if method in ('GET', 'POST', 'HEAD', 'OPTIONS'):
+            if method in ('GET', 'PUT', 'HEAD', 'OPTIONS'):
                 continue
 
             self.resource_things.called = False
             self.simulate_request('/things/84/stuff/65', method=method)
 
             self.assertFalse(self.resource_things.called)
-            self.assertEquals(self.srmock.status, falcon.HTTP_405)
+            self.assertEqual(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET, HEAD, POST, OPTIONS')
+            allow_header = ('allow', 'GET, HEAD, PUT, OPTIONS')
 
             self.assertThat(headers, Contains(allow_header))
 
@@ -184,36 +177,23 @@ class TestHttpMethodRouting(testing.TestBase):
                 '/get_with_param/bogus_param', method=method)
 
             self.assertFalse(self.resource_get_with_faulty_put.called)
-            self.assertEquals(self.srmock.status, falcon.HTTP_405)
+            self.assertEqual(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET, PUT, OPTIONS')
+            allow_header = ('allow', 'GET, PUT, OPTIONS')
 
             self.assertThat(headers, Contains(allow_header))
 
     def test_default_on_options(self):
         self.simulate_request('/things/84/stuff/65', method='OPTIONS')
-        self.assertEquals(self.srmock.status, falcon.HTTP_204)
+        self.assertEqual(self.srmock.status, falcon.HTTP_204)
 
         headers = self.srmock.headers
-        allow_header = ('Allow', 'GET, HEAD, POST')
+        allow_header = ('allow', 'GET, HEAD, PUT')
 
         self.assertThat(headers, Contains(allow_header))
-
-    def test_unexpected_type_error(self):
-        # Suppress logging
-        stream = io.StringIO() if six.PY3 else io.BytesIO()
-        self.simulate_request(
-            '/get_with_param/bogus_param', method='PUT', wsgierrors=stream)
-
-        self.assertEquals(self.srmock.status, falcon.HTTP_500)
-
-    def test_type_error(self):
-        self.api.add_route('/faulty', FaultyDecoratedResource())
-        self.simulate_request('/faulty')
-        self.assertEquals(self.srmock.status, falcon.HTTP_405)
 
     def test_bogus_method(self):
         self.simulate_request('/things', method=self.getUniqueString())
         self.assertFalse(self.resource_things.called)
-        self.assertEquals(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
