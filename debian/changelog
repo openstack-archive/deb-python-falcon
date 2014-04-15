@@ -1,3 +1,9 @@
+python-falcon (0.1.7-5) UNRELEASED; urgency=low
+
+  * Fixed wrong build-depends for python{3,}-all-dev.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 15 Apr 2014 21:34:59 +0800
+
 python-falcon (0.1.7-4) unstable; urgency=medium
 
   * Applied patch from Matthias Klose to fix the shebangs, though do not do it
