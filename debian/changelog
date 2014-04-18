@@ -1,3 +1,10 @@
+python-falcon (0.1.8-2) unstable; urgency=medium
+
+  * rm -rf $(CURDIR)/debian/python*-falcon/usr/lib/python*/dist-packages/tests
+    (Closes: #744992). Thanks to Jakub Wilk <jwilk@debian.org> for the report.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 18 Apr 2014 10:08:40 +0000
+
 python-falcon (0.1.8-1) unstable; urgency=low
 
   * New upstream releaes.

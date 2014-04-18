@@ -19,6 +19,7 @@ override_dh_auto_install:
 		python$$pyvers setup.py install --install-layout=deb \
 			--root $(CURDIR)/debian/python3-falcon; \
 	done
+	rm -rf $(CURDIR)/debian/python*-falcon/usr/lib/python*/dist-packages/tests
 	mv $(CURDIR)/debian/python3-falcon/usr/bin/falcon-bench $(CURDIR)/debian/python3-falcon/usr/bin/python3-falcon-bench
 
 override_dh_auto_test:
