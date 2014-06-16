@@ -145,7 +145,7 @@ Last-Update: 2014-06-16
  
 -    URL1 = u'/\u00e7runchy/bacon'
 -    URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
-+    URL1 = six,u('/\u00e7runchy/bacon')
++    URL1 = six.u('/\u00e7runchy/bacon')
 +    URL2 = six.u('ab\u00e7') if six.PY3 else 'ab\xc3\xa7'
  
      def on_get(self, req, resp):
