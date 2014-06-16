@@ -26,6 +26,80 @@ Last-Update: 2014-06-16
  
  TRUE_STRINGS = ('true', 'True', 'yes')
  FALSE_STRINGS = ('false', 'False', 'no')
+--- python-falcon-0.1.8.orig/tests/test_error_handlers.py
++++ python-falcon-0.1.8/tests/test_error_handlers.py
+@@ -3,6 +3,7 @@ import json
+ import falcon
+ import falcon.testing as testing
+ 
++import six
+ 
+ def capture_error(ex, req, resp, params):
+     resp.status = falcon.HTTP_723
+@@ -24,10 +25,10 @@ class CustomException(CustomBaseExceptio
+     def handle(ex, req, resp, params):
+         raise falcon.HTTPError(
+             falcon.HTTP_792,
+-            u'Internet crashed!',
+-            u'Catastrophic weather event',
+-            href=u'http://example.com/api/inconvenient-truth',
+-            href_text=u'Drill, baby drill!')
++            six.u('Internet crashed!'),
++            six.u('Catastrophic weather event'),
++            href=six.u('http://example.com/api/inconvenient-truth'),
++            href_text=six.u('Drill, baby drill!'))
+ 
+ 
+ class ErroredClassResource(object):
+--- python-falcon-0.1.8.orig/tests/test_headers.py
++++ python-falcon-0.1.8/tests/test_headers.py
+@@ -105,8 +105,8 @@ class HeaderHelpersResource:
+ 
+ class LocationHeaderUnicodeResource:
+ 
+-    URL1 = u'/\u00e7runchy/bacon'
+-    URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
++    URL1 = six.u('/\u00e7runchy/bacon')
++    URL2 = six.u('ab\u00e7') if six.PY3 else 'ab\xc3\xa7'
+ 
+     def on_get(self, req, resp):
+         resp.location = self.URL1
+--- python-falcon-0.1.8.orig/tests/test_hello.py
++++ python-falcon-0.1.8/tests/test_hello.py
+@@ -9,7 +9,7 @@ import six
+ 
+ class HelloResource:
+     sample_status = '200 OK'
+-    sample_unicode = (u'Hello World! \x80' +
++    sample_unicode = (six.u('Hello World! \x80') +
+                       six.text_type(testing.rand_string(0, 0)))
+ 
+     sample_utf8 = sample_unicode.encode('utf-8')
+--- python-falcon-0.1.8.orig/tests/test_httperror.py
++++ python-falcon-0.1.8/tests/test_httperror.py
+@@ -5,6 +5,7 @@ from testtools.matchers import raises, N
+ import falcon.testing as testing
+ import falcon
+ 
++import six
+ 
+ class FaultyResource:
+ 
+@@ -43,10 +44,10 @@ class UnicodeFaultyResource(object):
+         self.called = True
+         raise falcon.HTTPError(
+             falcon.HTTP_792,
+-            u'Internet \xe7rashed!',
+-            u'\xc7atastrophic weather event',
+-            href=u'http://example.com/api/\xe7limate',
+-            href_text=u'Drill b\xe1by drill!')
++            six.u('Internet \xe7rashed!'),
++            six.u('\xc7atastrophic weather event'),
++            href=six.u('http://example.com/api/\xe7limate'),
++            href_text=six.u('Drill b\xe1by drill!'))
+ 
+ 
+ class MiscErrorsResource:
 --- python-falcon-0.1.8.orig/tests/test_query_params.py
 +++ python-falcon-0.1.8/tests/test_query_params.py
 @@ -1,6 +1,7 @@
@@ -48,17 +122,6 @@ Last-Update: 2014-06-16
  
      def test_allowed_names(self):
          query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&some_thing=x&'
---- python-falcon-0.1.8.orig/tests/test_wsgi_errors.py
-+++ python-falcon-0.1.8/tests/test_wsgi_errors.py
-@@ -3,7 +3,7 @@ import io
- import falcon.testing as testing
- import six
- 
--unicode_message = u'Unicode: \x80'
-+unicode_message = six.u('Unicode: \x80')
- 
- 
- class LoggerResource:
 --- python-falcon-0.1.8.orig/tests/test_utils.py
 +++ python-falcon-0.1.8/tests/test_utils.py
 @@ -11,7 +11,7 @@ from falcon.util import uri
@@ -112,69 +175,14 @@ Last-Update: 2014-06-16
  
          self.assertEqual(uri.decode('ab%2Fcd'), 'ab/cd')
  
---- python-falcon-0.1.8.orig/tests/test_error_handlers.py
-+++ python-falcon-0.1.8/tests/test_error_handlers.py
-@@ -3,6 +3,7 @@ import json
- import falcon
+--- python-falcon-0.1.8.orig/tests/test_wsgi_errors.py
++++ python-falcon-0.1.8/tests/test_wsgi_errors.py
+@@ -3,7 +3,7 @@ import io
  import falcon.testing as testing
+ import six
  
-+import six
- 
- def capture_error(ex, req, resp, params):
-     resp.status = falcon.HTTP_723
-@@ -24,10 +25,10 @@ class CustomException(CustomBaseExceptio
-     def handle(ex, req, resp, params):
-         raise falcon.HTTPError(
-             falcon.HTTP_792,
--            u'Internet crashed!',
--            u'Catastrophic weather event',
--            href=u'http://example.com/api/inconvenient-truth',
--            href_text=u'Drill, baby drill!')
-+            six.u('Internet crashed!'),
-+            six.u('Catastrophic weather event'),
-+            href=six.u('http://example.com/api/inconvenient-truth'),
-+            href_text=six.u('Drill, baby drill!'))
+-unicode_message = u'Unicode: \x80'
++unicode_message = six.u('Unicode: \x80')
  
  
- class ErroredClassResource(object):
---- python-falcon-0.1.8.orig/tests/test_headers.py
-+++ python-falcon-0.1.8/tests/test_headers.py
-@@ -105,8 +105,8 @@ class HeaderHelpersResource:
- 
- class LocationHeaderUnicodeResource:
- 
--    URL1 = u'/\u00e7runchy/bacon'
--    URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
-+    URL1 = six.u('/\u00e7runchy/bacon')
-+    URL2 = six.u('ab\u00e7') if six.PY3 else 'ab\xc3\xa7'
- 
-     def on_get(self, req, resp):
-         resp.location = self.URL1
---- python-falcon-0.1.8.orig/tests/test_hello.py
-+++ python-falcon-0.1.8/tests/test_hello.py
-@@ -9,7 +9,7 @@ import six
- 
- class HelloResource:
-     sample_status = '200 OK'
--    sample_unicode = (u'Hello World! \x80' +
-+    sample_unicode = (six.u('Hello World! \x80') +
-                       six.text_type(testing.rand_string(0, 0)))
- 
-     sample_utf8 = sample_unicode.encode('utf-8')
---- python-falcon-0.1.8.orig/tests/test_httperror.py
-+++ python-falcon-0.1.8/tests/test_httperror.py
-@@ -43,10 +43,10 @@ class UnicodeFaultyResource(object):
-         self.called = True
-         raise falcon.HTTPError(
-             falcon.HTTP_792,
--            u'Internet \xe7rashed!',
--            u'\xc7atastrophic weather event',
--            href=u'http://example.com/api/\xe7limate',
--            href_text=u'Drill b\xe1by drill!')
-+            six.u('Internet \xe7rashed!'),
-+            six.u('\xc7atastrophic weather event'),
-+            href=six.u('http://example.com/api/\xe7limate'),
-+            href_text=six.u('Drill b\xe1by drill!'))
- 
- 
- class MiscErrorsResource:
+ class LoggerResource:
