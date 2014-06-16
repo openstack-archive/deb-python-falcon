@@ -1,6 +1,7 @@
 python-falcon (0.1.8-3) unstable; urgency=medium
 
   * Also build-depends on cython3 (Closes: #751494).
+  * Added a python 3.2 compat patch for unicode strings.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 16 Jun 2014 16:39:28 +0800
 

@@ -1,0 +1,180 @@
+Description: Python 3.2 compat
+ Adds a bunch of six.u('') to replace some u''
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2014-06-16
+
+--- python-falcon-0.1.8.orig/falcon/request.py
++++ python-falcon-0.1.8/falcon/request.py
+@@ -18,6 +18,8 @@ limitations under the License.
+ 
+ from datetime import datetime
+ 
++import six
++
+ try:
+     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
+     # standard way of exposing a socket as a file-like object, and
+@@ -39,8 +41,8 @@ from falcon.util import uri
+ from falcon import request_helpers as helpers
+ 
+ 
+-DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
+-                            u' {1} {2}{3} => ')
++DEFAULT_ERROR_LOG_FORMAT = (six.u('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
++                            ' {1} {2}{3} => '))
+ 
+ TRUE_STRINGS = ('true', 'True', 'yes')
+ FALSE_STRINGS = ('false', 'False', 'no')
+--- python-falcon-0.1.8.orig/tests/test_query_params.py
++++ python-falcon-0.1.8/tests/test_query_params.py
+@@ -1,6 +1,7 @@
+ import falcon
+ import falcon.testing as testing
+ 
++import six
+ 
+ class TestQueryParams(testing.TestBase):
+ 
+@@ -50,9 +51,9 @@ class TestQueryParams(testing.TestBase):
+         self.simulate_request('/', query_string=query_string)
+ 
+         req = self.resource.req
+-        self.assertEqual(req.get_param('id'), u'23,42')
++        self.assertEqual(req.get_param('id'), six.u('23,42'))
+         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
+-        self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
++        self.assertEqual(req.get_param('q'), six.u('\u8c46 \u74e3'))
+ 
+     def test_allowed_names(self):
+         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&some_thing=x&'
+--- python-falcon-0.1.8.orig/tests/test_wsgi_errors.py
++++ python-falcon-0.1.8/tests/test_wsgi_errors.py
+@@ -3,7 +3,7 @@ import io
+ import falcon.testing as testing
+ import six
+ 
+-unicode_message = u'Unicode: \x80'
++unicode_message = six.u('Unicode: \x80')
+ 
+ 
+ class LoggerResource:
+--- python-falcon-0.1.8.orig/tests/test_utils.py
++++ python-falcon-0.1.8/tests/test_utils.py
+@@ -11,7 +11,7 @@ from falcon.util import uri
+ 
+ def _arbitrary_uris(count, length):
+     return (
+-        u''.join(
++        six.u('').join(
+             [random.choice(uri._ALL_ALLOWED)
+              for _ in range(length)]
+         ) for __ in range(count)
+@@ -100,17 +100,17 @@ class TestFalconUtils(testtools.TestCase
+         expected = 'http://example.com/v1/fiz%20bit/messages'
+         self.assertEqual(uri.encode(url), expected)
+ 
+-        url = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
++        url = six.u('http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true')
+         expected = ('http://example.com/v1/fizbit/messages'
+                     '?limit=3&e%C3%A7ho=true')
+         self.assertEqual(uri.encode(url), expected)
+ 
+     def test_uri_encode_value(self):
+         self.assertEqual(uri.encode_value('abcd'), 'abcd')
+-        self.assertEqual(uri.encode_value(u'abcd'), u'abcd')
+-        self.assertEqual(uri.encode_value(u'ab cd'), u'ab%20cd')
+-        self.assertEqual(uri.encode_value(u'\u00e7'), '%C3%A7')
+-        self.assertEqual(uri.encode_value(u'\u00e7\u20ac'),
++        self.assertEqual(uri.encode_value(six.u('abcd')), six.u('abcd'))
++        self.assertEqual(uri.encode_value(six.u('ab cd')), six.u('ab%20cd'))
++        self.assertEqual(uri.encode_value(six.u('\u00e7')), '%C3%A7')
++        self.assertEqual(uri.encode_value(six.u('\u00e7\u20ac')),
+                          '%C3%A7%E2%82%AC')
+         self.assertEqual(uri.encode_value('ab/cd'), 'ab%2Fcd')
+         self.assertEqual(uri.encode_value('ab+cd=42,9'),
+@@ -118,14 +118,14 @@ class TestFalconUtils(testtools.TestCase
+ 
+     def test_uri_decode(self):
+         self.assertEqual(uri.decode('abcd'), 'abcd')
+-        self.assertEqual(uri.decode(u'abcd'), u'abcd')
+-        self.assertEqual(uri.decode(u'ab%20cd'), u'ab cd')
++        self.assertEqual(uri.decode(six.u('abcd')), six.u('abcd'))
++        self.assertEqual(uri.decode(six.u('ab%20cd')), six.u('ab cd'))
+ 
+         self.assertEqual(uri.decode('This thing is %C3%A7'),
+-                         u'This thing is \u00e7')
++                         six.u('This thing is \u00e7'))
+ 
+         self.assertEqual(uri.decode('This thing is %C3%A7%E2%82%AC'),
+-                         u'This thing is \u00e7\u20ac')
++                         six.u('This thing is \u00e7\u20ac'))
+ 
+         self.assertEqual(uri.decode('ab%2Fcd'), 'ab/cd')
+ 
+--- python-falcon-0.1.8.orig/tests/test_error_handlers.py
++++ python-falcon-0.1.8/tests/test_error_handlers.py
+@@ -3,6 +3,7 @@ import json
+ import falcon
+ import falcon.testing as testing
+ 
++import six
+ 
+ def capture_error(ex, req, resp, params):
+     resp.status = falcon.HTTP_723
+@@ -24,10 +25,10 @@ class CustomException(CustomBaseExceptio
+     def handle(ex, req, resp, params):
+         raise falcon.HTTPError(
+             falcon.HTTP_792,
+-            u'Internet crashed!',
+-            u'Catastrophic weather event',
+-            href=u'http://example.com/api/inconvenient-truth',
+-            href_text=u'Drill, baby drill!')
++            six.u('Internet crashed!'),
++            six.u('Catastrophic weather event'),
++            href=six.u('http://example.com/api/inconvenient-truth'),
++            href_text=six.u('Drill, baby drill!'))
+ 
+ 
+ class ErroredClassResource(object):
+--- python-falcon-0.1.8.orig/tests/test_headers.py
++++ python-falcon-0.1.8/tests/test_headers.py
+@@ -105,8 +105,8 @@ class HeaderHelpersResource:
+ 
+ class LocationHeaderUnicodeResource:
+ 
+-    URL1 = u'/\u00e7runchy/bacon'
+-    URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
++    URL1 = six,u('/\u00e7runchy/bacon')
++    URL2 = six.u('ab\u00e7') if six.PY3 else 'ab\xc3\xa7'
+ 
+     def on_get(self, req, resp):
+         resp.location = self.URL1
+--- python-falcon-0.1.8.orig/tests/test_hello.py
++++ python-falcon-0.1.8/tests/test_hello.py
+@@ -9,7 +9,7 @@ import six
+ 
+ class HelloResource:
+     sample_status = '200 OK'
+-    sample_unicode = (u'Hello World! \x80' +
++    sample_unicode = (six.u('Hello World! \x80') +
+                       six.text_type(testing.rand_string(0, 0)))
+ 
+     sample_utf8 = sample_unicode.encode('utf-8')
+--- python-falcon-0.1.8.orig/tests/test_httperror.py
++++ python-falcon-0.1.8/tests/test_httperror.py
+@@ -43,10 +43,10 @@ class UnicodeFaultyResource(object):
+         self.called = True
+         raise falcon.HTTPError(
+             falcon.HTTP_792,
+-            u'Internet \xe7rashed!',
+-            u'\xc7atastrophic weather event',
+-            href=u'http://example.com/api/\xe7limate',
+-            href_text=u'Drill b\xe1by drill!')
++            six.u('Internet \xe7rashed!'),
++            six.u('\xc7atastrophic weather event'),
++            href=six.u('http://example.com/api/\xe7limate'),
++            href_text=six.u('Drill b\xe1by drill!'))
+ 
+ 
+ class MiscErrorsResource:

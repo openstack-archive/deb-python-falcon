@@ -1,1 +1,2 @@
 fix-non-ascii-in-doc.patch
+python3.2-compat.patch
