@@ -6,6 +6,7 @@ Uploaders: Julien Danjou <acid@debian.org>,
            Thomas Goirand <zigo@debian.org>,
            Mehdi Abaakouk <sileht@sileht.net>
 Build-Depends: cython,
+               cython3,
                debhelper (>= 9),
                lsb-release,
                openstack-pkg-tools,

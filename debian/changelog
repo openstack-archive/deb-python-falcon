@@ -1,3 +1,9 @@
+python-falcon (0.1.8-3) unstable; urgency=medium
+
+  * Also build-depends on cython3 (Closes: #751494).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 16 Jun 2014 16:39:28 +0800
+
 python-falcon (0.1.8-2) unstable; urgency=medium
 
   * rm -rf $(CURDIR)/debian/python*-falcon/usr/lib/python*/dist-packages/tests
