@@ -6,7 +6,7 @@
 The Falcon Web Framework
 =================================
 
-Release v\ |version|. (:ref:`Installation <install>`)
+Release v\ |version| (:ref:`Installation <install>`)
 
 Falcon is a minimalist WSGI library for building speedy web APIs and app
 backends. We like to think of Falcon as the `Dieter Rams` of web frameworks.
