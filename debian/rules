@@ -29,15 +29,7 @@ ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 endif
 
 override_dh_python2:
-	if [ $(DEB_RELEASE_NAME) = "precise" ] ; then \
-		dh_python2 ; \
-	else \
-		dh_python2 --shebang=/usr/bin/python ; \
-	fi
+	dh_python2 --shebang=/usr/bin/python
 
 override_dh_python3:
-	if [ $(DEB_RELEASE_NAME) = "precise" ] ; then \
-		dh_python3 ; \
-	else \
-		dh_python3 --shebang=/usr/bin/python3 ; \
-	fi
+	dh_python3 --shebang=/usr/bin/python3

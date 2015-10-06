@@ -8,6 +8,7 @@ python-falcon (0.3.0-1) experimental; urgency=medium
   * Dropped Python 3.2 patch.
   * Add --exclude='tests\.test_cookies\.TestCookies\.test_response.*' from
     the nosetests3 as the unit test is failing because of silly CaSe problems.
+  * Removed precise hack in debian/rules.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 05 Oct 2015 15:10:01 +0200
 
