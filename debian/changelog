@@ -6,8 +6,7 @@ python-falcon (0.3.0-1) experimental; urgency=medium
   * Added dh-python as build-depends.
   * Removed python-nose version hack in debian/rules.
   * Dropped Python 3.2 patch.
-  * Add --exclude='tests\.test_cookies\.TestCookies\.test_response.*' from
-    the nosetests3 as the unit test is failing because of silly CaSe problems.
+  * Added fix-bad-case-compare-in-python3-tests.patch.
   * Removed precise hack in debian/rules.
   * Using git tag instead of broken PyPi for the debian/watch.
 
