@@ -2,16 +2,16 @@ Source: python-falcon
 Section: python
 Priority: optional
 Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
-Uploaders: Julien Danjou <acid@debian.org>,
-           Thomas Goirand <zigo@debian.org>,
-           Mehdi Abaakouk <sileht@sileht.net>
+Uploaders: Thomas Goirand <zigo@debian.org>,
 Build-Depends: cython,
                cython3,
                debhelper (>= 9),
+               dh-python,
                lsb-release,
                openstack-pkg-tools,
-               python-all (>= 2.6.6-3~),
-               python-all-dev (>= 2.6.6-3~),
+               python-all,
+               python-all-dev,
+               python-mimeparse,
                python-nose,
                python-requests,
                python-setuptools,
@@ -19,21 +19,25 @@ Build-Depends: cython,
                python-testtools,
                python3-all,
                python3-all-dev,
+               python3-mimeparse,
                python3-nose,
                python3-requests,
                python3-setuptools,
                python3-six,
-               python3-testtools
-Standards-Version: 3.9.4
+               python3-testtools,
+Standards-Version: 3.9.6
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-falcon.git
 Vcs-Git: git://anonscm.debian.org/openstack/python-falcon.git
 Homepage: http://falconframework.org
 
 Package: python-falcon
 Architecture: any
-Pre-Depends: dpkg (>= 1.15.6~)
-Depends: ${misc:Depends}, ${python:Depends}, ${shlibs:Depends}
-Recommends: ${python:Recommends}
+Depends: python-mimeparse,
+         python-six,
+         ${misc:Depends},
+         ${python:Depends},
+         ${shlibs:Depends},
+Recommends: ${python:Recommends},
 Description: supersonic micro-framework for building cloud APIs - Python 2.x
  Falcon is a high-performance Python framework for building cloud APIs. It
  encourages the REST architectural style, and tries to do as little as possible
@@ -60,9 +64,12 @@ Description: supersonic micro-framework for building cloud APIs - Python 2.x
 
 Package: python3-falcon
 Architecture: any
-Pre-Depends: dpkg (>= 1.15.6~)
-Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
-Recommends: ${python3:Recommends}
+Depends: python3-mimeparse,
+         python3-six,
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends},
+Recommends: ${python3:Recommends},
 Description: supersonic micro-framework for building cloud APIs - Python 3.x
  Falcon is a high-performance Python framework for building cloud APIs. It
  encourages the REST architectural style, and tries to do as little as possible
