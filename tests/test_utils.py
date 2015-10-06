@@ -1,11 +1,17 @@
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 import functools
+import io
 import random
+import sys
 
 import testtools
 import six
 
 import falcon
+import falcon.testing
+from falcon import util
 from falcon.util import uri
 
 
@@ -25,6 +31,35 @@ class TestFalconUtils(testtools.TestCase):
         # NOTE(cabrera): for DRYness - used in uri.[de|en]code tests
         # below.
         self.uris = _arbitrary_uris(count=100, length=32)
+
+    def test_deprecated_decorator(self):
+        msg = 'Please stop using this thing. It is going away.'
+
+        @util.deprecated(msg)
+        def old_thing():
+            pass
+
+        if six.PY3:
+            stream = io.StringIO()
+        else:
+            stream = io.BytesIO()
+
+        old_stderr = sys.stderr
+        sys.stderr = stream
+
+        old_thing()
+
+        sys.stderr = old_stderr
+        self.assertIn(msg, stream.getvalue())
+
+    def test_http_now(self):
+        expected = datetime.utcnow()
+        actual = falcon.http_date_to_dt(falcon.http_now())
+
+        delta = actual - expected
+        delta_sec = abs(delta.days * 86400 + delta.seconds)
+
+        self.assertLessEqual(delta_sec, 1)
 
     def test_dt_to_http(self):
         self.assertEqual(
@@ -158,3 +193,108 @@ class TestFalconUtils(testtools.TestCase):
             expect = stdlib_unquote(case)
             actual = uri.decode(case)
             self.assertEqual(expect, actual)
+
+    def test_parse_query_string(self):
+        query_strinq = (
+            "a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1"
+            "&b=%7B%22test1%22%3A%20%22data1%22%"
+            "2C%20%22test2%22%3A%20%22data2%22%7D"
+            "&c=1,2,3"
+            "&d=test"
+            "&e=a,,%26%3D%2C"
+            "&f=a&f=a%3Db"
+            "&%C3%A9=a%3Db"
+        )
+        decoded_url = 'http://falconframework.org?test=1'
+        decoded_json = '{"test1": "data1", "test2": "data2"}'
+
+        result = uri.parse_query_string(query_strinq)
+        self.assertEqual(result['a'], decoded_url)
+        self.assertEqual(result['b'], decoded_json)
+        self.assertEqual(result['c'], ['1', '2', '3'])
+        self.assertEqual(result['d'], 'test')
+        self.assertEqual(result['e'], ['a', '&=,'])
+        self.assertEqual(result['f'], ['a', 'a=b'])
+        self.assertEqual(result[u'é'], 'a=b')
+
+        result = uri.parse_query_string(query_strinq, True)
+        self.assertEqual(result['a'], decoded_url)
+        self.assertEqual(result['b'], decoded_json)
+        self.assertEqual(result['c'], ['1', '2', '3'])
+        self.assertEqual(result['d'], 'test')
+        self.assertEqual(result['e'], ['a', '', '&=,'])
+        self.assertEqual(result['f'], ['a', 'a=b'])
+        self.assertEqual(result[u'é'], 'a=b')
+
+    def test_parse_host(self):
+        self.assertEqual(uri.parse_host('::1'), ('::1', None))
+        self.assertEqual(uri.parse_host('2001:ODB8:AC10:FE01::'),
+                         ('2001:ODB8:AC10:FE01::', None))
+        self.assertEqual(
+            uri.parse_host('2001:ODB8:AC10:FE01::', default_port=80),
+            ('2001:ODB8:AC10:FE01::', 80))
+
+        ipv6_addr = '2001:4801:1221:101:1c10::f5:116'
+
+        self.assertEqual(uri.parse_host(ipv6_addr), (ipv6_addr, None))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']'),
+                         (ipv6_addr, None))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:28080'),
+                         (ipv6_addr, 28080))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:8080'),
+                         (ipv6_addr, 8080))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:123'),
+                         (ipv6_addr, 123))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:42'),
+                         (ipv6_addr, 42))
+
+        self.assertEqual(uri.parse_host('173.203.44.122'),
+                         ('173.203.44.122', None))
+        self.assertEqual(uri.parse_host('173.203.44.122', default_port=80),
+                         ('173.203.44.122', 80))
+        self.assertEqual(uri.parse_host('173.203.44.122:27070'),
+                         ('173.203.44.122', 27070))
+        self.assertEqual(uri.parse_host('173.203.44.122:123'),
+                         ('173.203.44.122', 123))
+        self.assertEqual(uri.parse_host('173.203.44.122:42'),
+                         ('173.203.44.122', 42))
+
+        self.assertEqual(uri.parse_host('example.com'),
+                         ('example.com', None))
+        self.assertEqual(uri.parse_host('example.com', default_port=443),
+                         ('example.com', 443))
+        self.assertEqual(uri.parse_host('falcon.example.com'),
+                         ('falcon.example.com', None))
+        self.assertEqual(uri.parse_host('falcon.example.com:9876'),
+                         ('falcon.example.com', 9876))
+        self.assertEqual(uri.parse_host('falcon.example.com:42'),
+                         ('falcon.example.com', 42))
+
+
+class TestFalconTesting(falcon.testing.TestBase):
+    """Catch some uncommon branches not covered elsewhere."""
+
+    def test_path_escape_chars_in_create_environ(self):
+        env = falcon.testing.create_environ('/hello%20world%21')
+        self.assertEqual(env['PATH_INFO'], '/hello world!')
+
+    def test_unicode_path_in_create_environ(self):
+        if six.PY3:
+            self.skip('Test does not apply to Py3K')
+
+        env = falcon.testing.create_environ(u'/fancy/unícode')
+        self.assertEqual(env['PATH_INFO'], '/fancy/un\xc3\xadcode')
+
+        env = falcon.testing.create_environ(u'/simple')
+        self.assertEqual(env['PATH_INFO'], '/simple')
+
+    def test_none_header_value_in_create_environ(self):
+        env = falcon.testing.create_environ('/', headers={'X-Foo': None})
+        self.assertEqual(env['HTTP_X_FOO'], '')
+
+    def test_decode_empty_result(self):
+        body = self.simulate_request('/', decode='utf-8')
+        self.assertEqual(body, '')
+
+    def test_httpnow_alias_for_backwards_compat(self):
+        self.assertIs(falcon.testing.httpnow, util.http_now)

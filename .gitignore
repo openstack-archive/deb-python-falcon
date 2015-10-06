@@ -4,6 +4,9 @@
 *.c
 *.so
 
+# Jython
+*$py.class
+
 # Packages
 *.egg
 *.egg-info
@@ -27,6 +30,9 @@ pip-log.txt
 nosetests.xml
 htmlcov
 *.dat
+
+# Docs
+doc/_build
 
 # Translations
 *.mo

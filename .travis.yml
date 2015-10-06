@@ -1,16 +1,33 @@
 language: python
-install: pip install tox --use-mirrors
+sudo: false
+install: travis_scripts/install.sh
+cache:
+    directories:
+        - $HOME/.cache/pip
 env:
   - TOX_ENV=py26
   - TOX_ENV=py27
+  - TOX_ENV=py27_cython
   - TOX_ENV=py33
+  - TOX_ENV=py33_cython
+  - TOX_ENV=py34
+  - TOX_ENV=py34_cython
+  - TOX_ENV=pypy
+  - TOX_ENV=pypy3
   - TOX_ENV=pep8
   - TOX_ENV=pylint
+  - TOX_ENV=py27_smoke
+  - TOX_ENV=py27_smoke_cython
+  - JYTHON=true
 
-script: tox -e $TOX_ENV
+script: travis_scripts/run_tests.sh
 after_success: coveralls
 notifications:
-  email:
-    - kurt.griffiths@rackspace.com
   irc:
-    - "chat.freenode.net#falconframework"
+    channels:
+      - "chat.freenode.net#falconframework"
+    on_success: change
+    on_failure: always
+    use_notice: true
+    skip_join: true
+

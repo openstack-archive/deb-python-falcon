@@ -1,6 +1,7 @@
 coverage
+ddt
 nose
-ordereddict
+pyyaml
 requests
 six
 testtools

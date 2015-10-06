@@ -1,16 +1,34 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# Copyright 2014 by Rackspace Hosting, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import print_function
 
 import argparse
 from collections import defaultdict
-import cProfile
 from decimal import Decimal
 import gc
 import random
 import sys
 import timeit
+
+try:
+    import cProfile
+except ImportError:
+    import profile as cProfile
 
 try:
     import guppy
@@ -42,7 +60,7 @@ def bench(name, iterations, env, stat_memory):
     if heapy and stat_memory:
         heap_diff = heapy.heap() - heap_before
 
-    sec_per_req = Decimal(total_sec) / Decimal(iterations)
+    sec_per_req = Decimal(str(total_sec)) / Decimal(str(iterations))
 
     sys.stdout.write('.')
     sys.stdout.flush()
@@ -67,7 +85,7 @@ def profile(name, env, filename=None, verbose=False):
     func = create_bench(name, env)
 
     gc.collect()
-    code = 'for x in xrange(10000): func()'
+    code = 'for x in range(10000): func()'
 
     if verbose:
         if pprofile is None:
@@ -233,7 +251,7 @@ def main():
         us_per_req = (sec_per_req * Decimal(10 ** 6))
         factor = round_to_int(baseline / sec_per_req)
 
-        print('{3}. {0:.<15s}{1:.>06,d} req/sec or {2: >3.2f} μs/req ({4}x)'.
+        print('{3}. {0:.<15s}{1:.>06d} req/sec or {2: >3.2f} μs/req ({4}x)'.
               format(name, req_per_sec, us_per_req, i + 1, factor))
 
     if heapy and args.stat_memory:
@@ -248,3 +266,6 @@ def main():
             print(heap_diff)
 
     print()
+
+if __name__ == '__main__':
+    main()

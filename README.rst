@@ -33,29 +33,58 @@ being the only dependencies outside the standard library. We work to keep
 the code lean, making Falcon easier to test, optimize, and deploy.
 
 **Flexible.** Falcon can be deployed in a variety of ways, depending on
-your needs. The framework speaks WSGI, and works great with `Python 2.6
-and 2.7, PyPy, and Python 3.3 <https://travis-ci.org/racker/falcon>`__.
-There's no tight coupling with any async framework, leaving you free to
-mix-and-match what you need.
+your needs. The framework speaks WSGI, and works great with `CPython 2.6/2.7,
+PyPy, Jython 2.7, and CPython 3.3/3.4 <https://travis-ci.org/falconry/falcon>`__.
+There's no tight coupling with any async or database framework, leaving you
+free to mix-and-match what you need.
 
 Features
 ~~~~~~~~
 
+-  Highly-optimized, extensible code base
 -  Intuitive routing via URI templates and resource classes
 -  Easy access to headers and bodies through request and response
    classes
+-  Does not use WebOb (some of us do indeed consider this a feature)
 -  Idiomatic HTTP error responses via a handy exception base class
 -  DRY request processing using global, resource, and method hooks
 -  Snappy unit testing through WSGI helpers and mocks
+-  CPython 2.6/2.7, PyPy, Jython 2.7, and CPython 3.3/3.4 support
 -  20% speed boost when Cython is available
--  Python 2.6, Python 2.7, PyPy and Python 3.3 support
--  Speed, speed, and more speed!
 
 Install
 ~~~~~~~
+If available, Falcon will compile itself with Cython for an extra
+speed boost. The following will make sure Cython is installed first, and
+that you always have the latest and greatest.
 
 .. code:: bash
 
+    $ pip install --upgrade cython falcon
+
+**Installing on OS X Mavericks with Xcode 5.1**
+
+Xcode Command Line Tools are required to compile Cython. Install them with
+this command:
+
+.. code:: bash
+
+    $ xcode-select --install
+
+The Xcode 5.1 CLang compiler treats unrecognized command-line options as
+errors; this can cause problems under Python 2.6, for example:
+
+.. code:: bash
+
+    clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
+
+You can work around errors caused by unused arguments by setting some
+environment variables:
+
+.. code:: bash
+
+    $ export CFLAGS=-Qunused-arguments
+    $ export CPPFLAGS=-Qunused-arguments
     $ pip install cython falcon
 
 Test
@@ -63,6 +92,7 @@ Test
 
 .. code:: bash
 
+    $ pip install -r tools/test-requires
     $ pip install nose && nosetests
 
 To test across all supported Python versions:
@@ -74,15 +104,29 @@ To test across all supported Python versions:
 Usage
 ~~~~~
 
-Read the source, Luke!
+We have started documenting the library at http://falcon.readthedocs.org and we would of course greatly appreciate pull requests to help accelerate that effort.
 
-Docstrings can be found throughout the Falcon code base for your
-learning pleasure. You can also ask questions in **#falconframework** on
-freenode. We are planning on having real docs eventually; if you need
-them right away, consider sending a pull request. ;)
+The docstrings in the Falcon code base are quite extensive, and we recommend keeping a REPL running while learning the framework so that you can query the various modules and classes as you have questions.
 
-You can also check out `Marconi's WSGI driver <https://github.com/openstack/marconi/tree/master/marconi/queues/transport/wsgi>`__ to get a feel for how you might
-leverage Falcon in a real-world app.
+The Falcon community maintains a mailing list that you can use to share
+your ideas and ask questions about the framework. We use the appropriately
+minimalistic `Librelist <http://librelist.com/>`_ to host the discussions.
+
+Subscribing is super easy and doesn't require any account setup. Simply
+send an email to falcon@librelist.com and follow the instructions in the
+reply. For more information about managing your subscription, check out
+the `Librelist help page <http://librelist.com/help.html>`_.
+
+While we don't have an official code of conduct, we do expect everyone
+who participates on the mailing list to act professionally, and lead
+by example in encouraging constructive discussions. Each individual in
+the community is responsible for creating a positive, constructive, and
+productive culture.
+
+`Discussions are archived <http://librelist.com/browser/falcon>`_
+for posterity.
+
+Finally, you can always ask questions in **#falconframework** on freenode. The community is very friendly and helpful.
 
 Here is a simple, contrived example showing how to create a Falcon-based API.
 
@@ -129,8 +173,8 @@ Then, in another terminal:
 
     $ curl localhost:8000/things
 
-More Cowbell
-~~~~~~~~~~~~
+A More Complex Example
+~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a more involved example that demonstrates reading headers and query parameters, handling errors, and working with request and response bodies.
 
@@ -138,16 +182,25 @@ Here is a more involved example that demonstrates reading headers and query para
 
     import json
     import logging
+    import uuid
     from wsgiref import simple_server
 
     import falcon
+    import requests
 
 
-    class StorageEngine:
-        pass
+    class StorageEngine(object):
+
+        def get_things(self, marker, limit):
+            return [{'id': str(uuid.uuid4()), 'color': 'green'}]
+
+        def add_thing(self, thing):
+            thing['id'] = str(uuid.uuid4())
+            return thing
 
 
     class StorageError(Exception):
+
         @staticmethod
         def handle(ex, req, resp, params):
             description = ('Sorry, couldn\'t write your thing to the '
@@ -158,37 +211,110 @@ Here is a more involved example that demonstrates reading headers and query para
                                    description)
 
 
-    def token_is_valid(token, user_id):
-        return True  # Suuuuuure it's valid...
+    class SinkAdapter(object):
+
+        engines = {
+            'ddg': 'https://duckduckgo.com',
+            'y': 'https://search.yahoo.com/search',
+        }
+
+        def __call__(self, req, resp, engine):
+            url = self.engines[engine]
+            params = {'q': req.get_param('q', True)}
+            result = requests.get(url, params=params)
+
+            resp.status = str(result.status_code) + ' ' + result.reason
+            resp.content_type = result.headers['content-type']
+            resp.body = result.text
 
 
-    def auth(req, resp, params):
-        # Alternatively, do this in middleware
-        token = req.get_header('X-Auth-Token')
+    class AuthMiddleware(object):
 
-        if token is None:
-            description = ('Please provide an auth token '
-                           'as part of the request.')
+        def process_request(self, req, resp):
+            token = req.get_header('X-Auth-Token')
+            project = req.get_header('X-Project-ID')
 
-            raise falcon.HTTPUnauthorized('Auth token required',
-                                          description,
-                                          href='http://docs.example.com/auth')
+            if token is None:
+                description = ('Please provide an auth token '
+                               'as part of the request.')
 
-        if not token_is_valid(token, params['user_id']):
-            description = ('The provided auth token is not valid. '
-                           'Please request a new token and try again.')
+                raise falcon.HTTPUnauthorized('Auth token required',
+                                              description,
+                                              href='http://docs.example.com/auth')
 
-            raise falcon.HTTPUnauthorized('Authentication required',
-                                          description,
-                                          href='http://docs.example.com/auth',
-                                          scheme='Token; UUID')
+            if not self._token_is_valid(token, project):
+                description = ('The provided auth token is not valid. '
+                               'Please request a new token and try again.')
+
+                raise falcon.HTTPUnauthorized('Authentication required',
+                                              description,
+                                              href='http://docs.example.com/auth',
+                                              scheme='Token; UUID')
+
+        def _token_is_valid(self, token, project):
+            return True  # Suuuuuure it's valid...
 
 
-    def check_media_type(req, resp, params):
-        if not req.client_accepts_json:
-            raise falcon.HTTPUnsupportedMediaType(
-                'This API only supports the JSON media type.',
-                href='http://docs.examples.com/api/json')
+    class RequireJSON(object):
+
+        def process_request(self, req, resp):
+            if not req.client_accepts_json:
+                raise falcon.HTTPNotAcceptable(
+                    'This API only supports responses encoded as JSON.',
+                    href='http://docs.examples.com/api/json')
+
+            if req.method in ('POST', 'PUT'):
+                if 'application/json' not in req.content_type:
+                    raise falcon.HTTPUnsupportedMediaType(
+                        'This API only supports requests encoded as JSON.',
+                        href='http://docs.examples.com/api/json')
+
+
+    class JSONTranslator(object):
+
+        def process_request(self, req, resp):
+            # req.stream corresponds to the WSGI wsgi.input environ variable,
+            # and allows you to read bytes from the request body.
+            #
+            # See also: PEP 3333
+            if req.content_length in (None, 0):
+                # Nothing to do
+                return
+
+            body = req.stream.read()
+            if not body:
+                raise falcon.HTTPBadRequest('Empty request body',
+                                            'A valid JSON document is required.')
+
+            try:
+                req.context['doc'] = json.loads(body.decode('utf-8'))
+
+            except (ValueError, UnicodeDecodeError):
+                raise falcon.HTTPError(falcon.HTTP_753,
+                                       'Malformed JSON',
+                                       'Could not decode the request body. The '
+                                       'JSON was incorrect or not encoded as '
+                                       'UTF-8.')
+
+        def process_response(self, req, resp, resource):
+            if 'result' not in req.context:
+                return
+
+            resp.body = json.dumps(req.context['result'])
+
+
+    def max_body(limit):
+
+        def hook(req, resp, resource, params):
+            length = req.content_length
+            if length is not None and length > limit:
+                msg = ('The size of the request is too large. The body must not '
+                       'exceed ' + str(limit) + ' bytes in length.')
+
+                raise falcon.HTTPRequestEntityTooLarge(
+                    'Request body is too large', msg)
+
+        return hook
 
 
     class ThingsResource:
@@ -215,34 +341,36 @@ Here is a more involved example that demonstrates reading headers and query para
                     description,
                     30)
 
-            resp.set_header('X-Powered-By', 'Donuts')
-            resp.status = falcon.HTTP_200
-            resp.body = json.dumps(result)
+            # An alternative way of doing DRY serialization would be to
+            # create a custom class that inherits from falcon.Request. This
+            # class could, for example, have an additional 'doc' property
+            # that would serialize to JSON under the covers.
+            req.context['result'] = result
 
+            resp.set_header('X-Powered-By', 'Small Furry Creatures')
+            resp.status = falcon.HTTP_200
+
+        @falcon.before(max_body(64 * 1024))
         def on_post(self, req, resp, user_id):
             try:
-                raw_json = req.stream.read()
-            except Exception:
-                raise falcon.HTTPError(falcon.HTTP_748,
-                                       'Read Error',
-                                       'Could not read the request body. Must be '
-                                       'them ponies again.')
+                doc = req.context['doc']
+            except KeyError:
+                raise falcon.HTTPBadRequest(
+                    'Missing thing',
+                    'A thing must be submitted in the request body.')
 
-            try:
-                thing = json.loads(raw_json, 'utf-8')
-            except ValueError:
-                raise falcon.HTTPError(falcon.HTTP_753,
-                                       'Malformed JSON',
-                                       'Could not decode the request body. The '
-                                       'JSON was incorrect.')
-
-            proper_thing = self.db.add_thing(thing)
+            proper_thing = self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/%s/things/%s' % (user_id, proper_thing.id)
+            resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
+
 
     # Configure your WSGI server to load "things.app" (app is a WSGI callable)
-    app = falcon.API(before=[auth, check_media_type])
+    app = falcon.API(middleware=[
+        AuthMiddleware(),
+        RequireJSON(),
+        JSONTranslator(),
+    ])
 
     db = StorageEngine()
     things = ThingsResource(db)
@@ -251,6 +379,12 @@ Here is a more involved example that demonstrates reading headers and query para
     # If a responder ever raised an instance of StorageError, pass control to
     # the given handler.
     app.add_error_handler(StorageError, StorageError.handle)
+
+    # Proxy some things to another service; this example shows how you might
+    # send parts of an API off to a legacy system that hasn't been upgraded
+    # yet, or perhaps is a single cluster that all data centers have to share.
+    sink = SinkAdapter()
+    app.add_sink(sink, r'/search/(?P<engine>ddg|y)\Z')
 
     # Useful for debugging problems in your API; works with pdb.set_trace()
     if __name__ == '__main__':
@@ -280,7 +414,7 @@ guide <http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments>`
 Legal
 ~~~~~
 
-Copyright 2013 by Rackspace Hosting, Inc.
+Copyright 2013 by Rackspace Hosting, Inc. and other contributors as noted in the individual source files.
 
 Falcon image courtesy of `John
 O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>`__.
@@ -300,7 +434,7 @@ permissions and limitations under the License.
 .. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
     :width: 20
     :height: 20
-.. |Build Status| image:: https://travis-ci.org/racker/falcon.png
-   :target: https://travis-ci.org/racker/falcon
-.. |Coverage Status| image:: https://coveralls.io/repos/racker/falcon/badge.png?branch=master
-   :target: https://coveralls.io/r/racker/falcon
+.. |Build Status| image:: https://travis-ci.org/falconry/falcon.svg
+   :target: https://travis-ci.org/falconry/falcon
+.. |Coverage Status| image:: https://coveralls.io/repos/falconry/falcon/badge.svg?branch=master
+   :target: https://coveralls.io/r/falconry/falcon

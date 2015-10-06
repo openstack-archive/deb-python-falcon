@@ -1,17 +1,19 @@
+import glob
 import imp
 import io
-import sys
+import os
 from os import path
 from setuptools import setup, find_packages, Extension
+import sys
+
+MYDIR = path.abspath(os.path.dirname(__file__))
 
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
 # NOTE(kgriffs): python-mimeparse is newer than mimeparse, supports Py3
 # TODO(kgriffs): Fork and optimize/modernize python-mimeparse
-REQUIRES = ['six', 'python-mimeparse']
-if sys.version_info < (2, 7):
-    REQUIRES.append('ordereddict')
+REQUIRES = ['six>=1.4.0', 'python-mimeparse']
 
 PYPY = True
 CYTHON = False
@@ -26,27 +28,40 @@ if not PYPY:
         CYTHON = True
     except ImportError:
         print('\nWARNING: Cython not installed. '
-              'Falcon modules will still work fine, but will run '
+              'Falcon will still work fine, but may run '
               'a bit slower.\n')
         CYTHON = False
 
 if CYTHON:
-    ext_names = (
-        'api',
-        'api_helpers',
-        'request',
-        'request_helpers',
-        'response',
-        'response_helpers',
-        'responders',
-        'http_error',
-        'exceptions'
-    )
+    def list_modules(dirname):
+        filenames = glob.glob(path.join(dirname, '*.py'))
 
-    cmdclass = {'build_ext': build_ext}
+        module_names = []
+        for name in filenames:
+            module, ext = path.splitext(path.basename(name))
+            if module != '__init__':
+                module_names.append(module)
+
+        return module_names
+
     ext_modules = [
         Extension('falcon.' + ext, [path.join('falcon', ext + '.py')])
-        for ext in ext_names]
+        for ext in list_modules(path.join(MYDIR, 'falcon'))]
+
+    ext_modules += [
+        Extension('falcon.util.' + ext,
+                  [path.join('falcon', 'util', ext + '.py')])
+
+        for ext in list_modules(path.join(MYDIR, 'falcon', 'util'))]
+
+    ext_modules += [
+        Extension('falcon.routing.' + ext,
+                  [path.join('falcon', 'routing', ext + '.py')])
+
+        for ext in list_modules(path.join(MYDIR, 'falcon', 'routing'))]
+
+    cmdclass = {'build_ext': build_ext}
+
 else:
     cmdclass = {}
     ext_modules = []
@@ -71,16 +86,18 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: Implementation :: Jython',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
     ],
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',
     author_email='mail@kgriffs.com',
     url='http://falconframework.org',
     license='Apache 2.0',
-    packages=find_packages(exclude=['*.tests']),
+    packages=find_packages(exclude=['tests']),
     include_package_data=True,
     zip_safe=False,
     install_requires=REQUIRES,
