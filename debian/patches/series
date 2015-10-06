@@ -1,1 +1,2 @@
 fix-non-ascii-in-doc.patch
+fix-bad-case-compare-in-python3-tests.patch
