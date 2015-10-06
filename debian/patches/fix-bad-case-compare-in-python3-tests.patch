@@ -21,12 +21,12 @@ Last-Update: 2015-10-06
 -            ("set-cookie",
 -                "foo=bar; Domain=example.com; httponly; Path=/; secure"),
 -            self.srmock.headers)
-+        if six.PY3:
++        try:
 +            self.assertIn(
 +                ("set-cookie",
 +                    "foo=bar; Domain=example.com; HttpOnly; Path=/; Secure"),
 +                self.srmock.headers)
-+        else:
++        except:
 +            self.assertIn(
 +                ("set-cookie",
 +                    "foo=bar; Domain=example.com; httponly; Path=/; secure"),
@@ -39,11 +39,11 @@ Last-Update: 2015-10-06
 -        self.assertIn(("set-cookie", "foo=bar; httponly; Max-Age=300; secure"),
 -                      self.srmock.headers)
 -        self.assertIn(("set-cookie", "bar=baz; secure"), self.srmock.headers)
-+        if six.PY3:
++        try:
 +            self.assertIn(("set-cookie", "foo=bar; HttpOnly; Max-Age=300; Secure"),
 +                          self.srmock.headers)
 +            self.assertIn(("set-cookie", "bar=baz; Secure"), self.srmock.headers)
-+        else:
++        except:
 +            self.assertIn(("set-cookie", "foo=bar; httponly; Max-Age=300; secure"),
 +                          self.srmock.headers)
 +            self.assertIn(("set-cookie", "bar=baz; secure"), self.srmock.headers)
