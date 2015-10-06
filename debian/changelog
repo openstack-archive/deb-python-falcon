@@ -5,6 +5,7 @@ python-falcon (0.3.0-1) experimental; urgency=medium
   * Standards-Version is now 3.9.6.
   * Added dh-python as build-depends.
   * Removed python-nose version hack in debian/rules.
+  * Dropped Python 3.2 patch.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 05 Oct 2015 15:10:01 +0200
 
