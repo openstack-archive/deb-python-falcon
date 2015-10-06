@@ -1,6 +1,6 @@
 python-falcon (0.3.0-2) experimental; urgency=medium
 
-  * Added missing python{3}-ddp build-dependency.
+  * Added missing python{3}-{ddp,yaml} build-dependency.
 
  -- Thomas Goirand <zigo@debian.org>  Tue, 06 Oct 2015 13:35:26 +0000
 
