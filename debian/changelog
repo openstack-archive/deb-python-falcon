@@ -1,3 +1,9 @@
+python-falcon (0.3.0-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 05 Oct 2015 15:10:01 +0200
+
 python-falcon (0.1.8-3) unstable; urgency=medium
 
   * Also build-depends on cython3 (Closes: #751494).
