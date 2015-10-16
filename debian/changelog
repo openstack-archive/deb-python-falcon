@@ -1,3 +1,9 @@
+python-falcon (0.3.0-4) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 16 Oct 2015 09:22:57 +0000
+
 python-falcon (0.3.0-3) experimental; urgency=medium
 
   * Fixes python3 case patch so that it works also with backports to Jessie
