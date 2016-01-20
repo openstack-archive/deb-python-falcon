@@ -1,3 +1,4 @@
 fix-non-ascii-in-doc.patch
 fix-bad-case-compare-in-python3-tests.patch
 fixes-test_request_cookie_parsing.patch
+fix-spelling.patch
