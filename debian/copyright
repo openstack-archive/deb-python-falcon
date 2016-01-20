@@ -3,10 +3,6 @@ Upstream-Name: falcon
 Upstream-Contact: Kurt Griffiths <kurt.griffiths@rackspace.com>
 Source: git://github.com/racker/falcon.git
 
-Files: debian/*
-Copyright: (c) 2013, Thomas Goirand <zigo@debian.org>
-License: Apache-2
-
 Files: *
 Copyright: (c) 2013, Kurt Griffiths <kurt.griffiths@rackspace.com>
            (c) 2013, Alejandro Cabrera <alejandro.cabrera@rackspace.com>
@@ -22,6 +18,10 @@ Copyright: (c) 2013, Kurt Griffiths <kurt.griffiths@rackspace.com>
            (c) 2013, Soren Hansen <soren@linux2go.dk>
            (c) 2013, Emanuele Rocca <ema@linux.it>
            (c) 2013, Chad Lung <chad.lung@gmail.com>
+License: Apache-2
+
+Files: debian/*
+Copyright: (c) 2013-2016, Thomas Goirand <zigo@debian.org>
 License: Apache-2
 
 License: Apache-2

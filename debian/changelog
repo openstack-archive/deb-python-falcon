@@ -2,6 +2,7 @@ python-falcon (0.3.0-5) unstable; urgency=medium
 
   * Added patch to fix test_request_cookie_parsing which fixes FTBFS
     (Closes: #811490, #811465).
+  * Fix debian/copyright ordering.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 20 Jan 2016 07:27:47 +0000
 
