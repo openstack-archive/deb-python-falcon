@@ -30,8 +30,8 @@ Build-Depends: cython,
                python3-testtools,
                python3-yaml,
 Standards-Version: 3.9.6
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-falcon.git
-Vcs-Git: git://anonscm.debian.org/openstack/python-falcon.git
+Vcs-Browser: https://anonscm.debian.org/cgit/openstack/python-falcon.git/
+Vcs-Git: https://anonscm.debian.org/git/openstack/python-falcon.git
 Homepage: http://falconframework.org
 
 Package: python-falcon
