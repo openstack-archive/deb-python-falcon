@@ -1,7 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: falcon
 Upstream-Contact: Kurt Griffiths <kurt.griffiths@rackspace.com>
-Source: git://github.com/racker/falcon.git
+Source: https://github.com/racker/falcon
 
 Files: *
 Copyright: (c) 2013, Kurt Griffiths <kurt.griffiths@rackspace.com>
