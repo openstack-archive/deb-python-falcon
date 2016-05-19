@@ -4,7 +4,7 @@ PYTHONS:=$(shell pyversions -vr)
 PYTHON3S:=$(shell py3versions -vr)
 DEB_RELEASE_NAME=$(shell lsb_release --codename | awk '{print $$2}')
 
-UPSTREAM_GIT = git://github.com/racker/falcon.git
+UPSTREAM_GIT := https://github.com/racker/falcon.git
 include /usr/share/openstack-pkg-tools/pkgos.make
 
 %:
