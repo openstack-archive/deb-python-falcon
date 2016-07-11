@@ -11,7 +11,6 @@ include /usr/share/openstack-pkg-tools/pkgos.make
 override_dh_auto_install:
 	pkgos-dh_auto_install
 	rm -rf $(CURDIR)/debian/python*-falcon/usr/lib/python*/dist-packages/tests
-	mv $(CURDIR)/debian/python3-falcon/usr/bin/falcon-bench $(CURDIR)/debian/python3-falcon/usr/bin/python3-falcon-bench
 
 override_dh_auto_test:
 ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
