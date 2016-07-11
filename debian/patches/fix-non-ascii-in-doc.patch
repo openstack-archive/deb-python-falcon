@@ -3,14 +3,16 @@ Author: Thomas Goirand <zigo@debian.org>
 Forwarded: no
 Last-Update: 2013-09-26
 
---- python-falcon-0.1.7.orig/README.rst
-+++ python-falcon-0.1.7/README.rst
-@@ -17,7 +17,7 @@ as little as possible while remaining `h
+Index: python-falcon/README.rst
+===================================================================
+--- python-falcon.orig/README.rst
++++ python-falcon/README.rst
+@@ -4,7 +4,7 @@ Falcon |Docs| |Build Status| |codecov.io
      Perfection is finally attained not when there is no longer anything
      to add, but when there is no longer anything to take away.
  
 -    *- Antoine de Saint-Exupéry*
 +    *- Antoine de Saint-Exupery*
  
- Design Goals
- ~~~~~~~~~~~~
+ Falcon is a `high-performance Python
+ framework <http://falconframework.org/index.html>`__ for building cloud
