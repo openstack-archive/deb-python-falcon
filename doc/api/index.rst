@@ -9,7 +9,9 @@ Classes and Functions
    cookies
    status
    errors
+   redirects
    middleware
    hooks
    routing
    util
+   testing

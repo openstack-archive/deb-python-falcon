@@ -1,147 +1,179 @@
-Falcon
-======
-
-|Build Status| |Coverage Status|
-
-Overview
-~~~~~~~~
-
-|Runner| Come hang out with us in **#falconframework** on freenode.
-
-Falcon is a `high-performance Python
-framework <http://falconframework.org/index.html>`__ for building cloud
-APIs. It encourages the REST architectural style, and tries to do
-as little as possible while remaining `highly effective
-<http://falconframework.org/index.html#Benefits>`__.
+Falcon |Docs| |Build Status| |codecov.io|
+=========================================
 
     Perfection is finally attained not when there is no longer anything
     to add, but when there is no longer anything to take away.
 
     *- Antoine de Saint-Exupéry*
 
+Falcon is a `high-performance Python
+framework <http://falconframework.org/index.html>`__ for building cloud
+APIs. It encourages the REST architectural style, and tries to do as
+little as possible while remaining `highly
+effective <http://falconframework.org/index.html#Benefits>`__.
+
+Quick Links
+-----------
+
+* `Read the docs <http://falcon.readthedocs.org/en/stable>`__.
+* `Subscribe to the community mailing list <https://falcon.readthedocs.org/en/stable/community/help.html#mailing-list>`__.
+* `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__.
+
+
 Design Goals
-~~~~~~~~~~~~
+------------
 
 **Fast.** Cloud APIs need to turn around requests quickly, and make
 efficient use of hardware. This is particularly important when serving
-many concurrent requests. Falcon processes requests `several times
-faster <http://falconframework.org/#Metrics>`__ than other popular web
-frameworks.
+many concurrent requests. Falcon is among the fastest WSGI frameworks
+available, processing requests
+`several times faster <http://falconframework.org/#Metrics>`__ than
+other Python web frameworks.
 
 **Light.** Only the essentials are included, with *six* and *mimeparse*
-being the only dependencies outside the standard library. We work to keep
-the code lean, making Falcon easier to test, optimize, and deploy.
+being the only dependencies outside the standard library. We work hard
+to keep the code lean, making Falcon easier to test, secure, optimize,
+and deploy.
 
-**Flexible.** Falcon can be deployed in a variety of ways, depending on
-your needs. The framework speaks WSGI, and works great with `CPython 2.6/2.7,
-PyPy, Jython 2.7, and CPython 3.3/3.4 <https://travis-ci.org/falconry/falcon>`__.
-There's no tight coupling with any async or database framework, leaving you
-free to mix-and-match what you need.
+**Flexible.** Falcon is not opinionated when it comes to talking to
+databases, rendering content, authorizing requests, etc. You are free to
+mix and match your own favorite libraries. Falcon apps work with
+any WSGI server, and run great under `CPython 2.6-2.7, PyPy, Jython 2.7,
+and CPython 3.3-3.5 <https://travis-ci.org/falconry/falcon>`__.
+
 
 Features
-~~~~~~~~
+--------
 
 -  Highly-optimized, extensible code base
--  Intuitive routing via URI templates and resource classes
+-  Intuitive routing via URI templates and REST-inspired resource
+   classes
 -  Easy access to headers and bodies through request and response
    classes
--  Does not use WebOb (some of us do indeed consider this a feature)
--  Idiomatic HTTP error responses via a handy exception base class
--  DRY request processing using global, resource, and method hooks
+-  DRY request processing via middleware components and hooks
+-  Idiomatic HTTP error responses
+-  Straightforward exception handling
 -  Snappy unit testing through WSGI helpers and mocks
--  CPython 2.6/2.7, PyPy, Jython 2.7, and CPython 3.3/3.4 support
--  20% speed boost when Cython is available
+-  CPython 2.6-2.7, PyPy, Jython 2.7, and CPython 3.3-3.5 support
+-  ~20% speed boost when Cython is available
 
 Install
-~~~~~~~
-If available, Falcon will compile itself with Cython for an extra
-speed boost. The following will make sure Cython is installed first, and
-that you always have the latest and greatest.
+-------
+
+PyPy
+^^^^
+
+`PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
+However, note that only the PyPy 2.7 compatible release is currently
+supported.
 
 .. code:: bash
 
-    $ pip install --upgrade cython falcon
+    $ pip install falcon
 
-**Installing on OS X Mavericks with Xcode 5.1**
+CPython
+^^^^^^^
 
-Xcode Command Line Tools are required to compile Cython. Install them with
-this command:
+Falcon also fully supports
+`CPython <https://www.python.org/downloads/>`__ 2.6-3.5.
+
+A universal wheel is available on PyPI for the the Falcon framework.
+Installing it is as simple as:
+
+.. code:: bash
+
+    $ pip install falcon
+
+Installing the wheel is a great way to get up and running with Falcon
+quickly in a development environment, but for an extra speed boost when
+deploying your application in production, Falcon can compile itself with
+Cython.
+
+The following commands tell pip to install Cython, and then to invoke
+Falcon's ``setup.py``, which will in turn detect the presence of Cython
+and then compile (AKA cythonize) the Falcon framework with the system's
+default C compiler.
+
+.. code:: bash
+
+    $ pip install cython
+    $ pip install --no-binary :all: falcon
+
+**Installing on OS X**
+
+Xcode Command Line Tools are required to compile Cython. Install them
+with this command:
 
 .. code:: bash
 
     $ xcode-select --install
 
-The Xcode 5.1 CLang compiler treats unrecognized command-line options as
+The Clang compiler treats unrecognized command-line options as
 errors; this can cause problems under Python 2.6, for example:
 
 .. code:: bash
 
     clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
 
-You can work around errors caused by unused arguments by setting some
-environment variables:
+You might also see warnings about unused functions. You can work around
+these issues by setting additional Clang C compiler flags as follows:
 
 .. code:: bash
 
-    $ export CFLAGS=-Qunused-arguments
-    $ export CPPFLAGS=-Qunused-arguments
-    $ pip install cython falcon
+    $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
 
 Test
-~~~~
+----
 
 .. code:: bash
 
     $ pip install -r tools/test-requires
     $ pip install nose && nosetests
 
-To test across all supported Python versions:
+To run the default set of tests:
 
 .. code:: bash
 
     $ pip install tox && tox
 
-Usage
-~~~~~
+Read the docs
+-------------
 
-We have started documenting the library at http://falcon.readthedocs.org and we would of course greatly appreciate pull requests to help accelerate that effort.
+The docstrings in the Falcon code base are quite extensive, and we
+recommend keeping a REPL running while learning the framework so that
+you can query the various modules and classes as you have questions.
 
-The docstrings in the Falcon code base are quite extensive, and we recommend keeping a REPL running while learning the framework so that you can query the various modules and classes as you have questions.
+Online docs are available at: http://falcon.readthedocs.org
 
-The Falcon community maintains a mailing list that you can use to share
-your ideas and ask questions about the framework. We use the appropriately
-minimalistic `Librelist <http://librelist.com/>`_ to host the discussions.
+You can build the same docs locally as follows:
 
-Subscribing is super easy and doesn't require any account setup. Simply
-send an email to falcon@librelist.com and follow the instructions in the
-reply. For more information about managing your subscription, check out
-the `Librelist help page <http://librelist.com/help.html>`_.
+.. code:: bash
 
-While we don't have an official code of conduct, we do expect everyone
-who participates on the mailing list to act professionally, and lead
-by example in encouraging constructive discussions. Each individual in
-the community is responsible for creating a positive, constructive, and
-productive culture.
+    $ pip install -r tools/doc-requires
+    $ cd doc
+    $ make html
 
-`Discussions are archived <http://librelist.com/browser/falcon>`_
-for posterity.
+    $ # open _build/html/index.html
 
-Finally, you can always ask questions in **#falconframework** on freenode. The community is very friendly and helpful.
 
-Here is a simple, contrived example showing how to create a Falcon-based API.
+Getting started
+---------------
+
+Here is a simple, contrived example showing how to create a Falcon-based
+API.
 
 .. code:: python
 
     # things.py
 
-    # Let's get this party started
+    # Let's get this party started!
     import falcon
 
 
     # Falcon follows the REST architectural style, meaning (among
     # other things) that you think in terms of resources and state
     # transitions, which map to HTTP verbs.
-    class ThingsResource:
+    class ThingsResource(object):
         def on_get(self, req, resp):
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
@@ -173,10 +205,12 @@ Then, in another terminal:
 
     $ curl localhost:8000/things
 
-A More Complex Example
-~~~~~~~~~~~~~~~~~~~~~~
+A more complex example
+----------------------
 
-Here is a more involved example that demonstrates reading headers and query parameters, handling errors, and working with request and response bodies.
+Here is a more involved example that demonstrates reading headers and
+query parameters, handling errors, and working with request and response
+bodies.
 
 .. code:: python
 
@@ -231,8 +265,10 @@ Here is a more involved example that demonstrates reading headers and query para
     class AuthMiddleware(object):
 
         def process_request(self, req, resp):
-            token = req.get_header('X-Auth-Token')
-            project = req.get_header('X-Project-ID')
+            token = req.get_header('Authorization')
+            account_id = req.get_header('Account-ID')
+
+            challenges = ['Token type="Fernet"']
 
             if token is None:
                 description = ('Please provide an auth token '
@@ -240,18 +276,19 @@ Here is a more involved example that demonstrates reading headers and query para
 
                 raise falcon.HTTPUnauthorized('Auth token required',
                                               description,
+                                              challenges,
                                               href='http://docs.example.com/auth')
 
-            if not self._token_is_valid(token, project):
+            if not self._token_is_valid(token, account_id):
                 description = ('The provided auth token is not valid. '
                                'Please request a new token and try again.')
 
                 raise falcon.HTTPUnauthorized('Authentication required',
                                               description,
-                                              href='http://docs.example.com/auth',
-                                              scheme='Token; UUID')
+                                              challenges,
+                                              href='http://docs.example.com/auth')
 
-        def _token_is_valid(self, token, project):
+        def _token_is_valid(self, token, account_id):
             return True  # Suuuuuure it's valid...
 
 
@@ -317,7 +354,7 @@ Here is a more involved example that demonstrates reading headers and query para
         return hook
 
 
-    class ThingsResource:
+    class ThingsResource(object):
 
         def __init__(self, db):
             self.db = db
@@ -347,7 +384,7 @@ Here is a more involved example that demonstrates reading headers and query para
             # that would serialize to JSON under the covers.
             req.context['result'] = result
 
-            resp.set_header('X-Powered-By', 'Small Furry Creatures')
+            resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
 
         @falcon.before(max_body(64 * 1024))
@@ -386,18 +423,50 @@ Here is a more involved example that demonstrates reading headers and query para
     sink = SinkAdapter()
     app.add_sink(sink, r'/search/(?P<engine>ddg|y)\Z')
 
-    # Useful for debugging problems in your API; works with pdb.set_trace()
+    # Useful for debugging problems in your API; works with pdb.set_trace(). You
+    # can also use Gunicorn to host your app. Gunicorn can be configured to
+    # auto-restart workers when it detects a code change, and it also works
+    # with pdb.
     if __name__ == '__main__':
         httpd = simple_server.make_server('127.0.0.1', 8000, app)
         httpd.serve_forever()
 
 
+Community
+---------
+
+The Falcon community maintains a mailing list that you can use to share
+your ideas and ask questions about the framework. We use the appropriately
+minimalistic `Librelist <http://librelist.com/>`_ to host the discussions.
+
+To join the mailing list, simply send your first email to falcon@librelist.com!
+This will automatically subscribe you to the mailing list *and* sends your email
+along to the rest of the subscribers. For more information about managing your
+subscription, check out the
+`Librelist help page <http://librelist.com/help.html>`_.
+
+We expect everyone who participates on the mailing list to act
+professionally, and lead by example in encouraging constructive
+discussions. Each individual in the community is responsible for
+creating a positive, constructive, and productive culture. See also
+the `Falcon Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`__
+
+`Discussions are archived <http://librelist.com/browser/falcon>`__ for
+posterity.
+
+We also hang out in `#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__ on freenode, where everyone is
+always welcome to ask questions and share ideas.
 
 Contributing
-~~~~~~~~~~~~
+------------
 
 Kurt Griffiths (kgriffs) is the creator and current maintainer of the
-Falcon framework, with the generous help of a number of contributors. Pull requests are always welcome.
+Falcon framework, with the generous help of a number of stylish and
+talented contributors.
+
+Pull requests are always welcome. We use the GitHub issue tracker to
+organize our work, put you do not need to open a new issue before
+submitting a PR.
 
 Before submitting a pull request, please ensure you have added/updated
 the appropriate tests (and that all existing tests still pass with your
@@ -405,36 +474,47 @@ changes), and that your coding style follows PEP 8 and doesn't cause
 pyflakes to complain.
 
 Commit messages should be formatted using `AngularJS
-conventions <http://goo.gl/QpbS7>`__ (one-liners are OK for now but body
-and footer may be required as the project matures).
+conventions <http://goo.gl/QpbS7>`__.
 
-Comments follow `Google's style
-guide <http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments>`__.
+Comments follow `Google's style guide <https://google.github.io/styleguide/pyguide.html?showone=Comments#Comments>`__,
+with the additional requirement of prefixing inline comments using your
+GitHub nick and an appropriate prefix:
+
+- TODO(riker): Damage report!
+- NOTE(riker): Well, that's certainly good to know.
+- PERF(riker): Travel time to the nearest starbase?
+- APPSEC(riker): In all trust, there is the possibility for betrayal.
+
+See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTRIBUTING.md>`__
 
 Legal
-~~~~~
+-----
 
-Copyright 2013 by Rackspace Hosting, Inc. and other contributors as noted in the individual source files.
+Copyright 2013-2016 by Rackspace Hosting, Inc. and other contributors as
+noted in the individual source files.
 
 Falcon image courtesy of `John
 O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>`__.
 
-Licensed under the Apache License, Version 2.0 (the "License"); you
-may not use this file except in compliance with the License. You may
-obtain a copy of the License at::
-
-    http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may
+not use any portion of the Falcon framework except in compliance with
+the License. Contributors agree to license their work under the same
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-implied. See the License for the specific language governing
-permissions and limitations under the License.
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
+.. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
+    :target: http://falcon.readthedocs.org/en/stable/?badge=stable
+    :alt: Falcon web framework docs
 .. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
     :width: 20
     :height: 20
 .. |Build Status| image:: https://travis-ci.org/falconry/falcon.svg
    :target: https://travis-ci.org/falconry/falcon
-.. |Coverage Status| image:: https://coveralls.io/repos/falconry/falcon/badge.svg?branch=master
-   :target: https://coveralls.io/r/falconry/falcon
+.. |codecov.io| image:: http://codecov.io/github/falconry/falcon/coverage.svg?branch=master
+   :target: http://codecov.io/github/falconry/falcon?branch=master

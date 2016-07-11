@@ -27,6 +27,40 @@ class NameResource(object):
         self.called = True
 
 
+class NameAndDigitResource(object):
+    def __init__(self):
+        self.id = None
+        self.name51 = None
+        self.called = False
+
+    def on_get(self, req, resp, id, name51):
+        self.id = id
+        self.name51 = name51
+        self.called = True
+
+
+class FileResource(object):
+    def __init__(self):
+        self.file_id = None
+        self.called = False
+
+    def on_get(self, req, resp, file_id):
+        self.file_id = file_id
+        self.called = True
+
+
+class FileDetailsResource(object):
+    def __init__(self):
+        self.file_id = None
+        self.ext = None
+        self.called = False
+
+    def on_get(self, req, resp, file_id, ext):
+        self.file_id = file_id
+        self.ext = ext
+        self.called = True
+
+
 class TestUriTemplates(testing.TestBase):
 
     def before(self):
@@ -116,6 +150,20 @@ class TestUriTemplates(testing.TestBase):
         self.assertNotIn(kwargs, 'Id')
         self.assertEqual(req.get_param('id'), None)
 
+    def test_single_with_trailing_digits(self):
+        self.api.add_route('/widgets/{id12}', self.resource)
+
+        self.simulate_request('/widgets/123')
+        self.assertTrue(self.resource.called)
+        self.assertEqual(self.resource.kwargs['id12'], '123')
+
+    def test_single_with_underscore(self):
+        self.api.add_route('/widgets/{widget_id}', self.resource)
+
+        self.simulate_request('/widgets/123')
+        self.assertTrue(self.resource.called)
+        self.assertEqual(self.resource.kwargs['widget_id'], '123')
+
     def test_single_trailing_slash(self):
         resource1 = IDResource()
         self.api.add_route('/1/{id}/', resource1)
@@ -158,6 +206,19 @@ class TestUriTemplates(testing.TestBase):
         self.assertEqual(resource.id, test_id)
         self.assertEqual(resource.name, test_name)
 
+    def test_multiple_with_digits(self):
+        resource = NameAndDigitResource()
+        self.api.add_route('/messages/{id}/names/{name51}', resource)
+
+        test_id = self.getUniqueString()
+        test_name = self.getUniqueString()
+        path = '/messages/' + test_id + '/names/' + test_name
+        self.simulate_request(path)
+        self.assertTrue(resource.called)
+
+        self.assertEqual(resource.id, test_id)
+        self.assertEqual(resource.name51, test_name)
+
     def test_empty_path_component(self):
         self.assertRaises(ValueError, self.api.add_route,
                           '//', self.resource)
@@ -180,3 +241,47 @@ class TestUriTemplates(testing.TestBase):
 
         self.assertRaises(ValueError, self.api.add_route,
                           'no/leading_slash', self.resource)
+
+    def test_same_level_complex_var(self):
+        resource = FileResource()
+        details_resource = FileDetailsResource()
+        self.api.add_route('/files/{file_id}', resource)
+        self.api.add_route('/files/{file_id}.{ext}', details_resource)
+
+        # dots cause ambiguous in filenames
+        file_id_1 = self.getUniqueString().replace('.', '-')
+        file_id_2 = self.getUniqueString().replace('.', '-')
+        ext = self.getUniqueString().replace('.', '-')
+        path_1 = '/files/' + file_id_1
+        path_2 = '/files/' + file_id_2 + '.' + ext
+
+        self.simulate_request(path_1)
+        self.assertTrue(resource.called)
+        self.assertEqual(resource.file_id, file_id_1)
+
+        self.simulate_request(path_2)
+        self.assertTrue(details_resource.called)
+        self.assertEqual(details_resource.file_id, file_id_2)
+        self.assertEqual(details_resource.ext, ext)
+
+    def test_same_level_complex_var_in_reverse_order(self):
+        resource = FileResource()
+        details_resource = FileDetailsResource()
+        self.api.add_route('/files/{file_id}.{ext}', details_resource)
+        self.api.add_route('/files/{file_id}', resource)
+
+        # dots cause ambiguous in filenames
+        file_id_1 = self.getUniqueString().replace('.', '-')
+        file_id_2 = self.getUniqueString().replace('.', '-')
+        ext = self.getUniqueString().replace('.', '-')
+        path_1 = '/files/' + file_id_1
+        path_2 = '/files/' + file_id_2 + '.' + ext
+
+        self.simulate_request(path_1)
+        self.assertTrue(resource.called)
+        self.assertEqual(resource.file_id, file_id_1)
+
+        self.simulate_request(path_2)
+        self.assertTrue(details_resource.called)
+        self.assertEqual(details_resource.file_id, file_id_2)
+        self.assertEqual(details_resource.ext, ext)

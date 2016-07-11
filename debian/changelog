@@ -1,10 +1,14 @@
-python-falcon (0.3.0-6) UNRELEASED; urgency=medium
+python-falcon (1.0.0-1) experimental; urgency=medium
 
+  [ Ondřej Nový ]
   * Fixed VCS URLs (https).
   * d/rules: Changed UPSTREAM_GIT protocol to https
   * d/copyright: Changed source URL to https protocol
 
- -- Ondřej Nový <novy@ondrej.org>  Sun, 28 Feb 2016 15:37:22 +0100
+  [ Thomas Goirand ]
+  * New upstream release.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 11 Jul 2016 10:02:42 +0200
 
 python-falcon (0.3.0-5) unstable; urgency=medium
 

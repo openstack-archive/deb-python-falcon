@@ -49,6 +49,8 @@ HTTP_305 = '305 Use Proxy'
 HTTP_USE_PROXY = HTTP_305
 HTTP_307 = '307 Temporary Redirect'
 HTTP_TEMPORARY_REDIRECT = HTTP_307
+HTTP_308 = '308 Permanent Redirect'
+HTTP_PERMANENT_REDIRECT = HTTP_308
 
 HTTP_400 = '400 Bad Request'
 HTTP_BAD_REQUEST = HTTP_400
@@ -88,8 +90,18 @@ HTTP_417 = '417 Expectation Failed'
 HTTP_EXPECTATION_FAILED = HTTP_417
 HTTP_418 = "418 I'm a teapot"
 HTTP_IM_A_TEAPOT = HTTP_418
+HTTP_422 = '422 Unprocessable Entity'
+HTTP_UNPROCESSABLE_ENTITY = HTTP_422
 HTTP_426 = '426 Upgrade Required'
 HTTP_UPGRADE_REQUIRED = HTTP_426
+HTTP_428 = '428 Precondition Required'
+HTTP_PRECONDITION_REQUIRED = HTTP_428
+HTTP_429 = '429 Too Many Requests'
+HTTP_TOO_MANY_REQUESTS = HTTP_429
+HTTP_431 = '431 Request Header Fields Too Large'
+HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = HTTP_431
+HTTP_451 = '451 Unavailable For Legal Reasons'
+HTTP_UNAVAILABLE_FOR_LEGAL_REASONS = HTTP_451
 
 HTTP_500 = '500 Internal Server Error'
 HTTP_INTERNAL_SERVER_ERROR = HTTP_500
@@ -103,6 +115,8 @@ HTTP_504 = '504 Gateway Time-out'
 HTTP_GATEWAY_TIMEOUT = HTTP_504
 HTTP_505 = '505 HTTP Version not supported'
 HTTP_HTTP_VERSION_NOT_SUPPORTED = HTTP_505
+HTTP_511 = '511 Network Authentication Required'
+HTTP_NETWORK_AUTHENTICATION_REQUIRED = HTTP_511
 
 # 70X - Inexcusable
 HTTP_701 = '701 Meh'
@@ -132,7 +146,7 @@ HTTP_742 = '742 A kitten dies'
 HTTP_743 = '743 I thought I knew regular expressions'
 HTTP_744 = '744 Y U NO write integration tests?'
 HTTP_745 = ("745 I don't always test my code, but when I do"
-            "I do it in production")
+            'I do it in production')
 HTTP_748 = '748 Confounded by Ponies'
 HTTP_749 = '749 Reserved for Chuck Norris'
 

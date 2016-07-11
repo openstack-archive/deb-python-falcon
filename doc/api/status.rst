@@ -22,6 +22,17 @@ Or, using the more verbose name:
 Using these constants helps avoid typos and cuts down on the number of
 string objects that must be created when preparing responses.
 
+Falcon also provides a generic `HTTPStatus` class. Raise this class from a hook,
+middleware, or a responder to stop handling the request and skip to the response
+handling. It takes status, additional headers and body as input arguments.
+
+HTTPStatus
+----------
+
+.. autoclass:: falcon.HTTPStatus
+    :members:
+
+
 1xx Informational
 -----------------
 
@@ -95,7 +106,12 @@ string objects that must be created when preparing responses.
     HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = HTTP_416
     HTTP_EXPECTATION_FAILED = HTTP_417
     HTTP_IM_A_TEAPOT = HTTP_418
+    HTTP_UNPROCESSABLE_ENTITY = HTTP_422
     HTTP_UPGRADE_REQUIRED = HTTP_426
+    HTTP_PRECONDITION_REQUIRED = HTTP_428
+    HTTP_TOO_MANY_REQUESTS = HTTP_429
+    HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = HTTP_431
+    HTTP_UNAVAILABLE_FOR_LEGAL_REASONS = HTTP_451
 
     HTTP_400 = '400 Bad Request'
     HTTP_401 = '401 Unauthorized'  # <-- Really means "unauthenticated"
@@ -116,7 +132,12 @@ string objects that must be created when preparing responses.
     HTTP_416 = '416 Range Not Satisfiable'
     HTTP_417 = '417 Expectation Failed'
     HTTP_418 = "418 I'm a teapot"
+    HTTP_422 = "422 Unprocessable Entity"
     HTTP_426 = '426 Upgrade Required'
+    HTTP_428 = '428 Precondition Required'
+    HTTP_429 = '429 Too Many Requests'
+    HTTP_431 = '431 Request Header Fields Too Large'
+    HTTP_451 = '451 Unavailable For Legal Reasons'
 
 5xx Server Error
 ----------------
@@ -129,6 +150,7 @@ string objects that must be created when preparing responses.
     HTTP_SERVICE_UNAVAILABLE = HTTP_503
     HTTP_GATEWAY_TIMEOUT = HTTP_504
     HTTP_HTTP_VERSION_NOT_SUPPORTED = HTTP_505
+    HTTP_NETWORK_AUTHENTICATION_REQUIRED = HTTP_511
 
     HTTP_500 = '500 Internal Server Error'
     HTTP_501 = '501 Not Implemented'
@@ -136,3 +158,4 @@ string objects that must be created when preparing responses.
     HTTP_503 = '503 Service Unavailable'
     HTTP_504 = '504 Gateway Time-out'
     HTTP_505 = '505 HTTP Version not supported'
+    HTTP_511 = '511 Network Authentication Required'

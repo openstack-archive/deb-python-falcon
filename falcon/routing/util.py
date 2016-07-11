@@ -17,7 +17,6 @@ import re
 import six
 
 from falcon import HTTP_METHODS, responders
-from falcon.hooks import _wrap_with_hooks
 
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
@@ -65,7 +64,9 @@ def compile_uri_template(template):
     if template != '/' and template.endswith('/'):
         template = template[:-1]
 
-    expression_pattern = r'{([a-zA-Z][a-zA-Z_]*)}'
+    # template names should be able to start with A-Za-z
+    # but also contain 0-9_ in the remaining portion
+    expression_pattern = r'{([a-zA-Z]\w*)}'
 
     # Get a list of field names
     fields = set(re.findall(expression_pattern, template))
@@ -78,7 +79,7 @@ def compile_uri_template(template):
     return fields, re.compile(pattern, re.IGNORECASE)
 
 
-def create_http_method_map(resource, before, after):
+def create_http_method_map(resource):
     """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
 
     Args:
@@ -87,10 +88,6 @@ def create_http_method_map(resource, before, after):
             supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
-        before: An action hook or ``list`` of hooks to be called before each
-            *on_\** responder defined by the resource.
-        after: An action hook or ``list`` of hooks to be called after each
-            *on_\** responder defined by the resource.
 
     Returns:
         dict: A mapping of HTTP methods to responders.
@@ -108,28 +105,21 @@ def create_http_method_map(resource, before, after):
         else:
             # Usually expect a method, but any callable will do
             if callable(responder):
-                responder = _wrap_with_hooks(
-                    before, after, responder, resource)
                 method_map[method] = responder
 
     # Attach a resource for unsupported HTTP methods
     allowed_methods = sorted(list(method_map.keys()))
 
-    # NOTE(sebasmagri): We want the OPTIONS and 405 (Not Allowed) methods
-    # responders to be wrapped on global hooks
     if 'OPTIONS' not in method_map:
         # OPTIONS itself is intentionally excluded from the Allow header
-        responder = responders.create_default_options(
-            allowed_methods)
-        method_map['OPTIONS'] = _wrap_with_hooks(
-            before, after, responder, resource)
+        opt_responder = responders.create_default_options(allowed_methods)
+        method_map['OPTIONS'] = opt_responder
         allowed_methods.append('OPTIONS')
 
     na_responder = responders.create_method_not_allowed(allowed_methods)
 
     for method in HTTP_METHODS:
         if method not in allowed_methods:
-            method_map[method] = _wrap_with_hooks(
-                before, after, na_responder, resource)
+            method_map[method] = na_responder
 
     return method_map

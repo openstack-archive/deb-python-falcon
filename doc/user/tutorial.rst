@@ -253,19 +253,10 @@ Next, let's implement the POST responder:
 .. code:: python
 
     import os
-    import time
     import uuid
+    import mimetypes
 
     import falcon
-
-
-    def _media_type_to_ext(media_type):
-        # Strip off the 'image/' prefix
-        return media_type[6:]
-
-
-    def _generate_id():
-        return str(uuid.uuid4())
 
 
     class Resource(object):
@@ -274,10 +265,8 @@ Next, let's implement the POST responder:
             self.storage_path = storage_path
 
         def on_post(self, req, resp):
-            image_id = _generate_id()
-            ext = _media_type_to_ext(req.content_type)
-            filename = image_id + '.' + ext
-
+            ext = mimetypes.guess_extension(req.content_type)
+            filename = '{uuid}{ext}'.format(uuid=uuid.uuid4(), ext=ext)
             image_path = os.path.join(self.storage_path, filename)
 
             with open(image_path, 'wb') as image_file:
@@ -289,7 +278,7 @@ Next, let's implement the POST responder:
                     image_file.write(chunk)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/images/' + image_id
+            resp.location = '/images/' + filename
 
 As you can see, we generate a unique ID and filename for the new image, and
 then write it out by reading from ``req.stream``. It's called ``stream`` instead
@@ -350,23 +339,10 @@ Go ahead and edit your ``images.py`` file to look something like this:
 .. code:: python
 
     import os
-    import time
     import uuid
+    import mimetypes
 
     import falcon
-
-
-    def _media_type_to_ext(media_type):
-        # Strip off the 'image/' prefix
-        return media_type[6:]
-
-
-    def _ext_to_media_type(ext):
-        return 'image/' + ext
-
-
-    def _generate_id():
-        return str(uuid.uuid4())
 
 
     class Collection(object):
@@ -375,10 +351,8 @@ Go ahead and edit your ``images.py`` file to look something like this:
             self.storage_path = storage_path
 
         def on_post(self, req, resp):
-            image_id = _generate_id()
-            ext = _media_type_to_ext(req.content_type)
-            filename = image_id + '.' + ext
-
+            ext = mimetypes.guess_extension(req.content_type)
+            filename = '{uuid}{ext}'.format(uuid=uuid.uuid4(), ext=ext)
             image_path = os.path.join(self.storage_path, filename)
 
             with open(image_path, 'wb') as image_file:
@@ -399,9 +373,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
             self.storage_path = storage_path
 
         def on_get(self, req, resp, name):
-            ext = os.path.splitext(name)[1][1:]
-            resp.content_type = _ext_to_media_type(ext)
-
+            resp.content_type = mimetypes.guess_type(name)[0]
             image_path = os.path.join(self.storage_path, name)
             resp.stream = open(image_path, 'rb')
             resp.stream_len = os.path.getsize(image_path)
@@ -511,7 +483,7 @@ message. Add this method below the definition of ``ALLOWED_IMAGE_TYPES``:
 
 .. code:: python
 
-    def validate_image_type(req, resp, params):
+    def validate_image_type(req, resp, resource, params):
         if req.content_type not in ALLOWED_IMAGE_TYPES:
             msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
             raise falcon.HTTPBadRequest('Bad request', msg)
@@ -525,9 +497,10 @@ And then attach the hook to the ``on_post`` responder like so:
 
 Now, before every call to that responder, Falcon will first invoke the
 ``validate_image_type`` method. There isn't anything special about that
-method, other than it must accept three arguments. Every hook takes, as its
+method, other than it must accept four arguments. Every hook takes, as its
 first two arguments, a reference to the same ``req`` and ``resp`` objects
-that are passed into responders. The third argument, named ``params`` by
+that are passed into responders. ``resource`` argument is a Resource instance
+associated with the request. The fourth argument, named ``params`` by
 convention, is a reference to the kwarg dictionary Falcon creates for each
 request. ``params`` will contain the route's URI template params and their
 values, if any.
@@ -539,7 +512,7 @@ responders in a DRY way, e.g.,:
 
 .. code:: python
 
-    def extract_project_id(req, resp, params):
+    def extract_project_id(req, resp, resource, params):
         """Adds `project_id` to the list of params for all responders.
 
         Meant to be used as a `before` hook.
@@ -547,8 +520,7 @@ responders in a DRY way, e.g.,:
         params['project_id'] = req.get_header('X-PROJECT-ID')
 
 Now, you can imagine that such a hook should apply to all responders for
-a resource, or even globally to all resources. You can apply hooks to an
-entire resource like so:
+a resource. You can apply hooks to an entire resource like so:
 
 .. code:: python
 
@@ -557,12 +529,8 @@ entire resource like so:
 
         # ...
 
-And you can apply hooks globally by passing them into the API class
-initializer:
-
-.. code:: python
-
-    falcon.API(before=[extract_project_id])
+Similar logic can be applied globally with middleware.
+(See :ref:`falcon.middleware <middleware>`)
 
 To learn more about hooks, take a look at the docstring for the ``API`` class,
 as well the docstrings for the ``falcon.before`` and ``falcon.after`` decorators.
@@ -581,12 +549,6 @@ an error occurs because the user is requested something they are not
 authorized to access. In that case, you may wish to simply return
 ``404 Not Found`` with an empty body, in case a malicious user is fishing
 for information that will help them crack your API.
-
-.. tip:: Please take a look at our new sister project,
-   `Talons <https://github.com/talons/talons>`_, for a collection of
-   useful Falcon hooks contributed by the community. Also, If you create a
-   nifty hook that you think others could use, please consider
-   contributing to the project yourself.
 
 Error Handling
 --------------

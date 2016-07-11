@@ -73,15 +73,18 @@ class UnauthorizedResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid token header.',
-                                      scheme='Token; UUID')
+                                      'Missing or invalid authorization.',
+                                      ['Basic realm="simple"'])
 
-
-class UnauthorizedResourceSchemaless:
-
-    def on_get(self, req, resp):
+    def on_post(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid token header.')
+                                      'Missing or invalid authorization.',
+                                      ['Newauth realm="apps"',
+                                       'Basic realm="simple"'])
+
+    def on_put(self, req, resp):
+        raise falcon.HTTPUnauthorized('Authentication Required',
+                                      'Missing or invalid authorization.', [])
 
 
 class NotFoundResource:
@@ -154,6 +157,17 @@ class RangeNotSatisfiableResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPRangeNotSatisfiable(123456)
+
+
+class TooManyRequestsResource:
+
+    def __init__(self, retry_after=None):
+        self.retry_after = retry_after
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPTooManyRequests('Too many requests',
+                                         '1 per minute',
+                                         retry_after=self.retry_after)
 
 
 class ServiceUnavailableResource:
@@ -230,6 +244,7 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/fail', headers=headers, decode='utf-8')
 
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertIn(('vary', 'Accept'), self.srmock.headers)
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
         self.assertEqual(expected_body, json.loads(body))
 
@@ -270,7 +285,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
 
-    def test_custom_error_serializer(self):
+    def test_custom_old_error_serializer(self):
         headers = {
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
@@ -311,7 +326,59 @@ class TestHTTPError(testing.TestBase):
             actual_doc = deserializer(body[0].decode('utf-8'))
             self.assertEqual(expected_doc, actual_doc)
 
-        # _check('application/x-yaml', yaml.load)
+        _check('application/x-yaml', yaml.load)
+        _check('application/json', json.loads)
+
+    def test_custom_old_error_serializer_no_body(self):
+        def _my_serializer(req, exception):
+            return (None, None)
+
+        self.api.set_error_serializer(_my_serializer)
+        self.simulate_request('/fail')
+
+    def test_custom_new_error_serializer(self):
+        headers = {
+            'X-Error-Title': 'Storage service down',
+            'X-Error-Description': ('The configured storage service is not '
+                                    'responding to requests. Please contact '
+                                    'your service provider'),
+            'X-Error-Status': falcon.HTTP_503
+        }
+
+        expected_doc = {
+            'code': 10042,
+            'description': ('The configured storage service is not '
+                            'responding to requests. Please contact '
+                            'your service provider'),
+            'title': 'Storage service down'
+        }
+
+        def _my_serializer(req, resp, exception):
+            representation = None
+
+            preferred = req.client_prefers(('application/x-yaml',
+                                            'application/json'))
+
+            if preferred is not None:
+                if preferred == 'application/json':
+                    representation = exception.to_json()
+                else:
+                    representation = yaml.dump(exception.to_dict(),
+                                               encoding=None)
+
+                resp.body = representation
+                resp.content_type = preferred
+
+        def _check(media_type, deserializer):
+            headers['Accept'] = media_type
+            self.api.set_error_serializer(_my_serializer)
+            body = self.simulate_request('/fail', headers=headers)
+            self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+
+            actual_doc = deserializer(body[0].decode('utf-8'))
+            self.assertEqual(expected_doc, actual_doc)
+
+        _check('application/x-yaml', yaml.load)
         _check('application/json', json.loads)
 
     def test_client_does_not_accept_anything(self):
@@ -454,15 +521,20 @@ class TestHTTPError(testing.TestBase):
         self.simulate_request('/401')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertIn(('www-authenticate', 'Token; UUID'),
+        self.assertIn(('www-authenticate', 'Basic realm="simple"'),
                       self.srmock.headers)
 
-    def test_401_schemaless(self):
-        self.api.add_route('/401', UnauthorizedResourceSchemaless())
-        self.simulate_request('/401')
+        self.simulate_request('/401', method='POST')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertNotIn(('www-authenticate', 'Token'), self.srmock.headers)
+        self.assertIn(('www-authenticate', 'Newauth realm="apps", '
+                      'Basic realm="simple"'),
+                      self.srmock.headers)
+
+        self.simulate_request('/401', method='PUT')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_401)
+        self.assertNotIn(('www-authenticate', []), self.srmock.headers)
 
     def test_404_without_body(self):
         self.api.add_route('/404', NotFoundResource())
@@ -575,6 +647,38 @@ class TestHTTPError(testing.TestBase):
         self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
         self.assertIn(('content-length', '0'), self.srmock.headers)
 
+    def test_429_no_retry_after(self):
+        self.api.add_route('/429', TooManyRequestsResource())
+        body = self.simulate_request('/429')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_429)
+        self.assertEqual(parsed_body['title'], 'Too many requests')
+        self.assertEqual(parsed_body['description'], '1 per minute')
+        self.assertNotIn('retry-after', self.srmock.headers)
+
+    def test_429(self):
+        self.api.add_route('/429', TooManyRequestsResource(60))
+        body = self.simulate_request('/429')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_429)
+        self.assertEqual(parsed_body['title'], 'Too many requests')
+        self.assertEqual(parsed_body['description'], '1 per minute')
+        self.assertIn(('retry-after', '60'), self.srmock.headers)
+
+    def test_429_datetime(self):
+        date = datetime.datetime.now() + datetime.timedelta(minutes=1)
+        self.api.add_route('/429', TooManyRequestsResource(date))
+        body = self.simulate_request('/429')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_429)
+        self.assertEqual(parsed_body['title'], 'Too many requests')
+        self.assertEqual(parsed_body['description'], '1 per minute')
+        self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
+                      self.srmock.headers)
+
     def test_503_integer_retry_after(self):
         self.api.add_route('/503', ServiceUnavailableResource(60))
         body = self.simulate_request('/503', decode='utf-8')
@@ -667,6 +771,9 @@ class TestHTTPError(testing.TestBase):
         self._misc_test(falcon.HTTPConflict, falcon.HTTP_409)
         self._misc_test(falcon.HTTPPreconditionFailed, falcon.HTTP_412)
         self._misc_test(falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
+                        needs_title=False)
+        self._misc_test(falcon.HTTPUnprocessableEntity, falcon.HTTP_422)
+        self._misc_test(falcon.HTTPUnavailableForLegalReasons, falcon.HTTP_451,
                         needs_title=False)
         self._misc_test(falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(falcon.HTTPBadGateway, falcon.HTTP_502)
