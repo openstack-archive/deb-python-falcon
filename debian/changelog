@@ -13,6 +13,7 @@ python-falcon (1.0.0-1) experimental; urgency=medium
     - fixes-test_request_cookie_parsing.patch
   * Rebase the other 2 patches.
   * Add disable-failing-test.patch.
+  * Added export DEB_BUILD_MAINT_OPTIONS = hardening=+bindnow.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 11 Jul 2016 10:02:42 +0200
 

@@ -5,6 +5,8 @@ DEB_RELEASE_NAME=$(shell lsb_release --codename | awk '{print $$2}')
 UPSTREAM_GIT := https://github.com/racker/falcon.git
 include /usr/share/openstack-pkg-tools/pkgos.make
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+bindnow
+
 %:
 	dh $@ --buildsystem=python_distutils --with python2,python3
 
