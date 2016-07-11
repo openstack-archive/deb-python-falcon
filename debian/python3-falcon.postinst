@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "configure" ] ; then
+	update-alternatives --install /usr/bin/falcon-bench falcon-bench /usr/bin/python3-falcon-bench 200
+fi
+
+#DEBHELPER#
+
+exit 0

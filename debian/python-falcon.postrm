@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "disappear" ] ; then
+	update-alternatives --remove falcon-bench /usr/bin/python2-falcon-bench
+fi
+
+#DEBHELPER#
+
+exit 0
