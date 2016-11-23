@@ -5,7 +5,7 @@ Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
 Uploaders: Thomas Goirand <zigo@debian.org>,
 Build-Depends: cython,
                cython3,
-               debhelper (>= 9),
+               debhelper (>= 10),
                dh-python,
                lsb-release,
                openstack-pkg-tools (>= 52~),
